@@ -6,6 +6,7 @@ import {
   Mail, Send
 } from 'lucide-react';
 import Footer from "../components/Footer";
+import { Link } from 'react-router-dom';
 
 export default function CareersPage() {
   const benefits = [
@@ -174,9 +175,12 @@ export default function CareersPage() {
             <p className="text-lg font-medium text-[#8f1eae] mb-8 font-inter">
               Think you can help us build something amazing?
             </p>
-            <button className="bg-[#8f1eae] text-white px-8 py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide flex items-center gap-2 mx-auto">
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 bg-[#8f1eae] text-white px-8 py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide mx-auto"
+            >
               Get in Touch
-            </button>
+            </Link>
           </div>
         </motion.div>
 
@@ -200,16 +204,19 @@ export default function CareersPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-3">
                 <Mail className="w-6 h-6 text-gray-300" />
-                <p className="text-lg font-medium font-inter">joinus@rekraft.in</p>
+                <p className="text-lg font-medium font-inter">contactrekraft@gmail.com</p>
               </div>
               <p className="text-sm font-lato font-light text-gray-300">
                 Tell us what you're passionate about and how you can contribute!
               </p>
               <div className="pt-6">
-                <button className="bg-white text-black px-8 py-3 font-inter font-medium hover:bg-gray-100 transition-all duration-300 border border-white rounded-[4px] uppercase text-sm tracking-wide flex items-center gap-2 mx-auto">
+                <a
+                  href="mailto:contactrekraft@gmail.com"
+                  className="inline-flex items-center gap-2 bg-white text-black px-8 py-3 font-inter font-medium hover:bg-gray-100 transition-all duration-300 border border-white rounded-[4px] uppercase text-sm tracking-wide mx-auto"
+                >
                   <Send className="w-4 h-4" />
                   Send Your Story
-                </button>
+                </a>
               </div>
             </div>
           </div>
