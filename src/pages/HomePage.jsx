@@ -565,28 +565,18 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { addToCart } = useAuth();
 
-  // Fetch featured products from backend
+  // Fetch featured products from backend - FIXED VERSION
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
         console.log('🔄 Fetching featured products from backend...');
-        try {
-  const productsData = await apiService.getProducts();
-  const products = Array.isArray(productsData) ? productsData : 
-                   productsData?.data || productsData?.products || [];
-  setProducts(products);
-} catch (error) {
-  console.error('Error fetching products:', error);
-  setProducts([]);
-}
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch products');
-        }
+        const productsData = await apiService.getProducts();
+        const products = Array.isArray(productsData) ? productsData : 
+                         productsData?.data || productsData?.products || [];
         
-        const products = await response.json();
-        console.log('✅ Featured products received:', products);
+        console.log('✅ Featured products received:', products.slice(0, 3));
         
         // Take first 3 products as featured
         setFeaturedProducts(products.slice(0, 3));

@@ -493,7 +493,7 @@ export default function ShopPage() {
   // Available brands extracted from products
   const [availableBrands, setAvailableBrands] = useState([]);
 
-  // Fetch all products on initial load
+  // Fetch all products on initial load - FIXED VERSION
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -502,36 +502,17 @@ export default function ShopPage() {
         
         console.log('🔄 Fetching all products from backend...');
         
-        try {
-  const productsData = await apiService.getProducts();
-  const products = Array.isArray(productsData) ? productsData : 
-                   productsData?.data || productsData?.products || [];
-  setAllProducts(products);
-  setFilteredProducts(products);
-} catch (error) {
-  console.error('Error fetching products:', error);
-  setAllProducts([]);
-  setFilteredProducts([]);
-}
-
+        const productsData = await apiService.getProducts();
+        const products = Array.isArray(productsData) ? productsData : 
+                         productsData?.data || productsData?.products || [];
         
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
+        console.log('✅ Backend products received:', products.length, 'products');
         
-        const data = await response.json();
-        
-        if (!Array.isArray(data)) {
-          throw new Error('Invalid response format from server');
-        }
-        
-        console.log('✅ Backend products received:', data.length, 'products');
-        
-        const brands = [...new Set(data.map(product => product.brand).filter(Boolean))].sort();
+        const brands = [...new Set(products.map(product => product.brand).filter(Boolean))].sort();
         setAvailableBrands(brands);
         
-        setProducts(data);
-        setFilteredProducts(data);
+        setProducts(products);
+        setFilteredProducts(products);
         
       } catch (err) {
         console.error('❌ Error fetching products:', err);
