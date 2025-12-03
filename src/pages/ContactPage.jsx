@@ -1,7 +1,9 @@
+// Add import at the top:
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import { Link } from 'react-router-dom';
+import apiService from '../services/api'; // ✅ Added import
 import { 
   Mail, 
   Phone, 
@@ -27,6 +29,7 @@ export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false); // ✅ Added success state
   const [activeFAQ, setActiveFAQ] = useState(null);
 
   const contactMethods = [
@@ -94,19 +97,16 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    setSuccess(false); // ✅ Reset success state
 
     try {
-      const response = await fetch('http://localhost:3000/api/contact/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
+      // ✅ Use apiService instead of fetch
+      const data = await apiService.submitContactForm(formData);
+      
+      if (data.success) {
+        console.log('✅ Contact form submitted successfully:', data);
+        setSuccess(true);
+        setError('');
         setIsSubmitted(true);
         setFormData({
           name: "",
@@ -116,11 +116,15 @@ export default function ContactPage() {
           message: ""
         });
       } else {
-        setError(result.errors?.[0]?.msg || result.message || 'Failed to send message');
+        setError(data.error || 'Failed to send message');
+        setSuccess(false);
+        setIsSubmitted(false);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      setError('Network error. Please check your connection and try again.');
+      console.error('❌ Error submitting contact form:', error);
+      setError(error.message || 'Network error. Please try again.');
+      setSuccess(false);
+      setIsSubmitted(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -255,7 +259,7 @@ export default function ContactPage() {
                 </motion.div>
               )}
               
-              {isSubmitted ? (
+              {success && isSubmitted ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -271,7 +275,10 @@ export default function ContactPage() {
                     Thank you for reaching out. Our team will review your message and get back to you within 24 hours.
                   </p>
                   <button
-                    onClick={() => setIsSubmitted(false)}
+                    onClick={() => {
+                      setIsSubmitted(false);
+                      setSuccess(false);
+                    }}
                     className="inline-flex items-center justify-center bg-[#8f1eae] text-white px-6 py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded uppercase text-xs tracking-wider"
                   >
                     Send Another Message

@@ -1,3 +1,6 @@
+// Add import at the top:
+import apiService from '../services/api';
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -125,23 +128,11 @@ export default function CheckoutPage() {
       const token = localStorage.getItem('token');
       const amountInPaise = Math.round(amount * 100);
 
-      const paymentResponse = await fetch('http://localhost:3000/api/payments/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          amount: amountInPaise,
-          orderId: order._id
-        })
+      // AFTER:
+      const paymentData = await apiService.createPaymentOrder({
+        amount: amountInPaise,
+        orderId: order._id
       });
-
-      const paymentData = await paymentResponse.json();
-
-      if (!paymentResponse.ok) {
-        throw new Error(paymentData.error || 'Payment initiation failed');
-      }
 
       if (!window.Razorpay) {
         throw new Error('Razorpay payment gateway is still loading. Please try again in a moment.');
@@ -155,26 +146,18 @@ export default function CheckoutPage() {
         description: "Order Payment",
         order_id: paymentData.data.id,
         handler: async function (response) {
-          const verifyResponse = await fetch('http://localhost:3000/api/payments/verify-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              orderId: order._id
-            })
+          // AFTER:
+          const verification = await apiService.verifyPayment({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            orderId: order._id
           });
 
-          const verifyData = await verifyResponse.json();
-
-          if (verifyResponse.ok) {
+          if (verification.success) {
             await completeOrder(order._id);
           } else {
-            alert('Payment verification failed: ' + (verifyData.error || 'Unknown error'));
+            alert('Payment verification failed: ' + (verification.error || 'Unknown error'));
           }
         },
         prefill: {
@@ -203,26 +186,17 @@ export default function CheckoutPage() {
 
   const completeOrder = async (orderId) => {
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`http://localhost:3000/api/orders/${orderId}/complete`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // AFTER:
+      const orderComplete = await apiService.completeOrder(orderId);
 
-      if (response.ok) {
+      if (orderComplete.success) {
         await clearCart();
-        const orderResponse = await fetch(`http://localhost:3000/api/orders/${orderId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
         
-        const orderData = await orderResponse.json();
-        if (orderResponse.ok) {
-          setOrderData(orderData.data);
+        // AFTER:
+        const orderDetails = await apiService.getOrder(orderId);
+        
+        if (orderDetails.success) {
+          setOrderData(orderDetails.data);
           setCurrentStep(4);
         }
       }

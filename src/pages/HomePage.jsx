@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
+import apiService from '../services/api';
 import { 
   CheckCircle, 
   Shield, 
@@ -570,7 +571,15 @@ export default function HomePage() {
       try {
         setLoading(true);
         console.log('🔄 Fetching featured products from backend...');
-        const response = await fetch('http://localhost:3000/api/products');
+        try {
+  const productsData = await apiService.getProducts();
+  const products = Array.isArray(productsData) ? productsData : 
+                   productsData?.data || productsData?.products || [];
+  setProducts(products);
+} catch (error) {
+  console.error('Error fetching products:', error);
+  setProducts([]);
+}
         
         if (!response.ok) {
           throw new Error('Failed to fetch products');

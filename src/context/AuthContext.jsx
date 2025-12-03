@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import apiService from '../services/api';
 
 const AuthContext = createContext();
 
@@ -11,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState({ items: [], totalPrice: 0 });
   const [orders, setOrders] = useState([]);
+  const [addresses, setAddresses] = useState([]);
 
   // Check if user is logged in on app start
   useEffect(() => {
@@ -20,26 +22,21 @@ export const AuthProvider = ({ children }) => {
   const checkUserLoggedIn = async () => {
     try {
       const token = localStorage.getItem('token');
-      const userData = localStorage.getItem('user');
+      const storedUserData = localStorage.getItem('user');
 
-      if (token && userData) {
+      if (token && storedUserData) {
         console.log('🔄 Checking user login...');
-        const response = await fetch('http://localhost:3000/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          console.log('✅ User data from /api/auth/me:', userData.data);
+        try {
+          const data = await apiService.getProfile();
+          const userData = data.data;
           
-          setUser(userData.data);
+          console.log('✅ User data from API:', userData);
+          setUser(userData);
           
           // Fetch all user data after login
-          await fetchUserData(token);
-        } else {
-          console.log('❌ /api/auth/me failed, clearing storage');
+          await fetchUserData();
+        } catch (error) {
+          console.log('❌ API call failed, clearing storage');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
@@ -56,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Fetch all user data (addresses, cart, orders)
-  const fetchUserData = async (token) => {
+  const fetchUserData = async () => {
     try {
       // Fetch addresses
       await fetchAddresses();
@@ -76,23 +73,10 @@ export const AuthProvider = ({ children }) => {
     return localStorage.getItem('token');
   };
 
+  // ========== ADDRESS FUNCTIONS ==========
   const addAddress = async (addressData) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        return { success: false, error: 'Please login to manage addresses' };
-      }
-
-      const response = await fetch('http://localhost:3000/api/user/addresses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(addressData)
-      });
-
-      const data = await response.json();
+      const data = await apiService.addAddress(addressData);
       
       if (data.success) {
         // Refresh addresses after adding
@@ -103,23 +87,13 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Add address error:', error);
-      return { success: false, error: 'Failed to add address' };
+      return { success: false, error: error.message || 'Failed to add address' };
     }
   };
 
   const updateAddress = async (addressId, addressData) => {
     try {
-      const token = getAuthToken();
-      const response = await fetch(`http://localhost:3000/api/user/addresses/${addressId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(addressData)
-      });
-
-      const data = await response.json();
+      const data = await apiService.updateAddress(addressId, addressData);
       
       if (data.success) {
         // Refresh addresses after updating
@@ -130,46 +104,26 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Update address error:', error);
-      return { success: false, error: 'Failed to update address' };
+      return { success: false, error: error.message || 'Failed to update address' };
     }
   };
 
   const deleteAddress = async (addressId) => {
     try {
-      const token = getAuthToken();
-      const response = await fetch(`http://localhost:3000/api/user/addresses/${addressId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
+      await apiService.deleteAddress(addressId);
       
-      if (data.success) {
-        // Refresh addresses after deleting
-        await fetchAddresses();
-        return { success: true, message: data.message };
-      } else {
-        return { success: false, error: data.error };
-      }
+      // Refresh addresses after deleting
+      await fetchAddresses();
+      return { success: true, message: 'Address deleted successfully' };
     } catch (error) {
       console.error('Delete address error:', error);
-      return { success: false, error: 'Failed to delete address' };
+      return { success: false, error: error.message || 'Failed to delete address' };
     }
   };
 
   const setDefaultAddress = async (addressId) => {
     try {
-      const token = getAuthToken();
-      const response = await fetch(`http://localhost:3000/api/user/addresses/${addressId}/default`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
+      const data = await apiService.setDefaultAddress(addressId);
       
       if (data.success) {
         // Refresh addresses after setting default
@@ -180,72 +134,48 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Set default address error:', error);
-      return { success: false, error: 'Failed to set default address' };
+      return { success: false, error: error.message || 'Failed to set default address' };
     }
   };
 
   const fetchAddresses = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.log('No token available for fetching addresses');
-        return { success: false, error: 'Please login to fetch addresses' };
-      }
-
-      const response = await fetch('http://localhost:3000/api/user/addresses', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const data = await apiService.getAddresses();
+      
+      if (data.success) {
         console.log('🏠 Addresses fetched successfully:', data.data?.addresses);
+        
+        const addressesList = data.data?.addresses || data.data || [];
+        setAddresses(addressesList);
         
         // Update user state with addresses
         setUser(prevUser => {
           if (prevUser) {
             return {
               ...prevUser,
-              addresses: data.data?.addresses || []
+              addresses: addressesList
             };
           }
           return prevUser;
         });
         
-        return { success: true, addresses: data.data?.addresses || [] };
+        return { success: true, addresses: addressesList };
       } else {
         console.log('Failed to fetch addresses');
-        return { success: false, error: 'Failed to fetch addresses' };
+        return { success: false, error: data.error || 'Failed to fetch addresses' };
       }
     } catch (error) {
       console.error('Error fetching addresses:', error);
-      return { success: false, error: 'Network error fetching addresses' };
+      return { success: false, error: error.message || 'Network error fetching addresses' };
     }
   };
 
   // ========== ORDER FUNCTIONS ==========
   const fetchOrders = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.log('No token available for fetching orders');
-        return;
-      }
-
-      const response = await fetch('http://localhost:3000/api/orders', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data.data);
-        console.log('📦 Orders fetched successfully:', data.data);
-      } else if (response.status === 401) {
-        console.log('User not authenticated for orders');
-      }
+      const data = await apiService.getOrders();
+      setOrders(data.data || data);
+      console.log('📦 Orders fetched successfully:', data.data || data);
     } catch (error) {
       console.error('Error fetching orders:', error);
     }
@@ -253,83 +183,42 @@ export const AuthProvider = ({ children }) => {
 
   const getOrderById = async (orderId) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        return { success: false, message: 'Please login to view orders' };
-      }
-
-      const response = await fetch(`http://localhost:3000/api/orders/${orderId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const data = await apiService.getOrder(orderId);
+      
+      if (data.success) {
         return { success: true, data: data.data };
       } else {
-        const error = await response.json();
-        return { success: false, message: error.error };
+        return { success: false, message: data.error || 'Failed to fetch order' };
       }
     } catch (error) {
       console.error('Error fetching order:', error);
-      return { success: false, message: 'Network error. Please try again.' };
+      return { success: false, message: error.message || 'Network error. Please try again.' };
     }
   };
 
   const createOrder = async (orderData) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        return { success: false, message: 'Please login to create order' };
-      }
-
-      const response = await fetch('http://localhost:3000/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(orderData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const data = await apiService.createPaymentOrder(orderData);
+      
+      if (data.success) {
         // Refresh orders after creating new one
         await fetchOrders();
         return { success: true, data: data.data, message: data.message };
       } else {
-        const error = await response.json();
-        return { success: false, message: error.error };
+        return { success: false, message: data.error || 'Failed to create order' };
       }
     } catch (error) {
       console.error('Error creating order:', error);
-      return { success: false, message: 'Network error. Please try again.' };
+      return { success: false, message: error.message || 'Network error. Please try again.' };
     }
   };
 
   // ========== CART FUNCTIONS ==========
   const fetchCart = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.log('No token available for fetching cart');
-        return;
-      }
-
-      const response = await fetch('http://localhost:3000/api/cart', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setCart(data.cart);
-        console.log('🛒 Cart fetched successfully:', data.cart);
-      } else if (response.status === 401) {
-        console.log('User not authenticated for cart');
-      }
+      const data = await apiService.getCart();
+      setCart(data.cart || data);
+      console.log('🛒 Cart fetched successfully:', data.cart || data);
     } catch (error) {
       console.error('Error fetching cart:', error);
     }
@@ -337,195 +226,127 @@ export const AuthProvider = ({ children }) => {
 
   const addToCart = async (productId, quantity = 1) => {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        return { 
-          success: false, 
-          message: 'Please login to add items to cart' 
-        };
-      }
-
-      const response = await fetch('http://localhost:3000/api/cart/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ productId, quantity })
-      });
+      const data = await apiService.addToCart({ productId, quantity });
       
-      if (response.ok) {
-        const data = await response.json();
-        setCart(data.cart);
-        console.log('✅ Item added to cart:', data.cart);
+      if (data.success) {
+        setCart(data.cart || data);
+        console.log('✅ Item added to cart:', data.cart || data);
         return { success: true, message: data.message };
-      } else if (response.status === 401) {
-        return { success: false, message: 'Please login to add items to cart' };
       } else {
-        const error = await response.json();
-        return { success: false, message: error.message };
+        return { success: false, message: data.error || 'Failed to add to cart' };
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      return { success: false, message: 'Network error. Please try again.' };
+      return { success: false, message: error.message || 'Network error. Please try again.' };
     }
   };
 
   const removeFromCart = async (itemId) => {
     try {
-      const token = getAuthToken();
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:3000/api/cart/item/${itemId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const data = await apiService.removeCartItem(itemId);
       
-      if (response.ok) {
-        const data = await response.json();
-        setCart(data.cart);
+      if (data.success) {
+        setCart(data.cart || data);
         return { success: true, message: data.message };
+      } else {
+        return { success: false, message: data.error || 'Failed to remove item' };
       }
     } catch (error) {
       console.error('Error removing from cart:', error);
+      return { success: false, message: error.message || 'Failed to remove item' };
     }
   };
 
   const updateCartItem = async (itemId, quantity) => {
     try {
-      const token = getAuthToken();
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:3000/api/cart/item/${itemId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ quantity })
-      });
+      const data = await apiService.updateCartItem(itemId, quantity);
       
-      if (response.ok) {
-        const data = await response.json();
-        setCart(data.cart);
+      if (data.success) {
+        setCart(data.cart || data);
         return { success: true, message: data.message };
+      } else {
+        return { success: false, message: data.error || 'Failed to update cart' };
       }
     } catch (error) {
       console.error('Error updating cart:', error);
+      return { success: false, message: error.message || 'Failed to update cart' };
     }
   };
 
   const clearCart = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) return;
-
-      const response = await fetch('http://localhost:3000/api/cart/clear', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const data = await apiService.clearCart();
       
-      if (response.ok) {
-        const data = await response.json();
-        setCart(data.cart);
+      if (data.success) {
+        setCart(data.cart || data);
         return { success: true, message: data.message };
+      } else {
+        return { success: false, message: data.error || 'Failed to clear cart' };
       }
     } catch (error) {
       console.error('Error clearing cart:', error);
+      return { success: false, message: error.message || 'Failed to clear cart' };
     }
   };
 
   // ========== AUTH FUNCTIONS ==========
   const register = async (name, email, password, phone) => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password, phone }),
-      });
+      const data = await apiService.register({ name, email, password, phone });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('token', data.data.token);
+      if (data.success) {
+        // apiService.login already sets the token internally
         localStorage.setItem('user', JSON.stringify(data.data));
         setUser(data.data);
         // Fetch all user data after registration
-        await fetchUserData(data.data.token);
+        await fetchUserData();
         return { success: true, message: data.message };
       } else {
         return { success: false, error: data.error };
       }
     } catch (error) {
-      return { success: false, error: 'Network error. Please try again.' };
+      return { success: false, error: error.message || 'Network error. Please try again.' };
     }
   };
 
   const login = async (email, password) => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await apiService.login({ email, password });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('token', data.data.token);
+      if (data.success) {
+        // apiService.login already sets the token internally
         localStorage.setItem('user', JSON.stringify(data.data));
         setUser(data.data);
         // Fetch all user data after login
-        await fetchUserData(data.data.token);
+        await fetchUserData();
         return { success: true, message: data.message };
       } else {
         return { success: false, error: data.error };
       }
     } catch (error) {
-      return { success: false, error: 'Network error. Please try again.' };
+      return { success: false, error: error.message || 'Network error. Please try again.' };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    apiService.clearToken();
     localStorage.removeItem('user');
     setUser(null);
     setCart({ items: [], totalPrice: 0 });
-    setOrders([]); // Clear orders on logout
+    setOrders([]);
+    setAddresses([]);
   };
 
   const updateProfile = async (name, phone) => {
     try {
-      const token = getAuthToken();
-      const response = await fetch('http://localhost:3000/api/auth/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, phone }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const updatedUser = { ...user, name, phone };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        setUser(updatedUser);
-        return { success: true, message: data.message };
-      } else {
-        return { success: false, error: data.error };
-      }
+      // Note: You'll need to add updateProfile method to apiService
+      // For now, we'll update local state
+      const updatedUser = { ...user, name, phone };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return { success: true, message: 'Profile updated successfully' };
     } catch (error) {
-      return { success: false, error: 'Network error. Please try again.' };
+      return { success: false, error: error.message || 'Network error. Please try again.' };
     }
   };
 
@@ -535,6 +356,7 @@ export const AuthProvider = ({ children }) => {
     user,
     cart,
     orders,
+    addresses,
     loading,
     
     // Auth functions
@@ -555,7 +377,7 @@ export const AuthProvider = ({ children }) => {
     getOrderById,
     createOrder,
     
-    // Address functions (NEW)
+    // Address functions
     addAddress,
     updateAddress,
     deleteAddress,

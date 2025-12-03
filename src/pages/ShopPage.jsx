@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
 import { Search, X, Filter, ChevronDown } from "lucide-react";
+import apiService from '../services/api';
 
 // Loading Spinner Component
 const LoadingSpinner = () => (
@@ -501,7 +502,18 @@ export default function ShopPage() {
         
         console.log('🔄 Fetching all products from backend...');
         
-        const response = await fetch('http://localhost:3000/api/products');
+        try {
+  const productsData = await apiService.getProducts();
+  const products = Array.isArray(productsData) ? productsData : 
+                   productsData?.data || productsData?.products || [];
+  setAllProducts(products);
+  setFilteredProducts(products);
+} catch (error) {
+  console.error('Error fetching products:', error);
+  setAllProducts([]);
+  setFilteredProducts([]);
+}
+
         
         if (!response.ok) {
           throw new Error(`Server error: ${response.status} ${response.statusText}`);

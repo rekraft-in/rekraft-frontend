@@ -1,3 +1,5 @@
+// Add import at the top:
+import apiService from '../services/api';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -26,24 +28,21 @@ export default function ForgotPasswordPage() {
     setSuccess('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      // 1. First call - Send OTP:
+      // AFTER:
+      const data = await apiService.forgotPassword(email);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      // Note: The apiService already parses JSON and handles the response
+      // so we can directly use the data
+      if (data.success) {
         setSuccess('Password reset OTP has been sent to your email');
         setStep(2);
       } else {
         setError(data.error || 'Failed to send OTP');
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      // The apiService might throw an error or return an error object
+      setError(error.message || error.error || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -284,23 +283,17 @@ const OTPVerification = ({ email, onSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/verify-reset-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, otp: otpValue }),
-      });
+      // 2. Second call - Verify OTP:
+      // AFTER:
+      const data = await apiService.verifyResetOTP(email, otpValue);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (data.success) {
         onSuccess();
       } else {
         setError(data.error || 'Invalid OTP');
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      setError(error.message || error.error || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -313,21 +306,15 @@ const OTPVerification = ({ email, onSuccess }) => {
     setTimer(60);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      // 3. Third call - Resend OTP:
+      // AFTER:
+      const data = await apiService.forgotPassword(email);
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!data.success) {
         setError(data.error || 'Failed to resend OTP');
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      setError(error.message || error.error || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -452,26 +439,17 @@ const NewPasswordForm = ({ email, onSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          email, 
-          password: formData.password 
-        }),
-      });
+      // 4. Fourth call - Reset password:
+      // AFTER:
+      const data = await apiService.resetPassword(email, formData.password);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (data.success) {
         onSuccess();
       } else {
         setError(data.error || 'Failed to reset password');
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      setError(error.message || error.error || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }

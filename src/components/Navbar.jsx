@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from '../context/AuthContext';
 import { Search, X, ShoppingBag, User, Menu, ChevronRight } from "lucide-react";
+import apiService from '../services/api';
+
 
 const EscapeHandler = ({ isOpen, onClose }) => {
   useEffect(() => {
@@ -112,63 +114,71 @@ export default function Navbar({ cartItemsCount }) {
   }, []);
 
   // Fetch search suggestions
-  const fetchSuggestions = async (query) => {
-    if (!query.trim()) {
+  // Fetch search suggestions
+const fetchSuggestions = async (query) => {
+  if (!query.trim()) {
+    setSuggestions([]);
+    return;
+  }
+
+  setIsLoadingSuggestions(true);
+  try {
+    // ✅ CORRECT: Use apiService directly
+    const productsData = await apiService.getProducts();
+    const products = Array.isArray(productsData) ? productsData : 
+                     productsData?.data || productsData?.products || [];
+    
+    if (!Array.isArray(products) || products.length === 0) {
       setSuggestions([]);
       return;
     }
-
-    setIsLoadingSuggestions(true);
-    try {
-      const response = await fetch('http://localhost:3000/api/products');
-      if (response.ok) {
-        const products = await response.json();
-        
-        // Generate suggestions based on query
-        const generatedSuggestions = [];
-        const queryLower = query.toLowerCase();
-        
-        // Add product names
-        products.forEach(product => {
-          if (product.name.toLowerCase().includes(queryLower)) {
-            generatedSuggestions.push(product.name);
-          }
-        });
-        
-        // Add brands
-        const brands = [...new Set(products.map(p => p.brand))];
-        brands.forEach(brand => {
-          if (brand.toLowerCase().includes(queryLower)) {
-            generatedSuggestions.push(`${brand} Laptops`);
-          }
-        });
-        
-        // Add processor suggestions
-        const processors = ['i3', 'i5', 'i7', 'i9', 'Ryzen 3', 'Ryzen 5', 'Ryzen 7', 'M1', 'M2', 'M3'];
-        processors.forEach(processor => {
-          if (processor.toLowerCase().includes(queryLower)) {
-            generatedSuggestions.push(`Laptops with ${processor}`);
-          }
-        });
-        
-        // Add RAM suggestions
-        const rams = ['8GB RAM', '16GB RAM', '32GB RAM'];
-        rams.forEach(ram => {
-          if (ram.toLowerCase().includes(queryLower)) {
-            generatedSuggestions.push(`${ram} Laptops`);
-          }
-        });
-        
-        // Remove duplicates and limit to 8 suggestions
-        const uniqueSuggestions = [...new Set(generatedSuggestions)].slice(0, 8);
-        setSuggestions(uniqueSuggestions);
+    
+    // Generate suggestions based on query
+    const generatedSuggestions = [];
+    const queryLower = query.toLowerCase();
+    
+    // Add product names
+    products.forEach(product => {
+      if (product.name && product.name.toLowerCase().includes(queryLower)) {
+        generatedSuggestions.push(product.name);
       }
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-    } finally {
-      setIsLoadingSuggestions(false);
-    }
-  };
+    });
+    
+    // Add brands
+    const brands = [...new Set(products.map(p => p.brand).filter(Boolean))];
+    brands.forEach(brand => {
+      if (brand.toLowerCase().includes(queryLower)) {
+        generatedSuggestions.push(`${brand} Laptops`);
+      }
+    });
+    
+    // Add processor suggestions
+    const processors = ['i3', 'i5', 'i7', 'i9', 'Ryzen 3', 'Ryzen 5', 'Ryzen 7', 'M1', 'M2', 'M3'];
+    processors.forEach(processor => {
+      if (processor.toLowerCase().includes(queryLower)) {
+        generatedSuggestions.push(`Laptops with ${processor}`);
+      }
+    });
+    
+    // Add RAM suggestions
+    const rams = ['8GB RAM', '16GB RAM', '32GB RAM'];
+    rams.forEach(ram => {
+      if (ram.toLowerCase().includes(queryLower)) {
+        generatedSuggestions.push(`${ram} Laptops`);
+      }
+    });
+    
+    // Remove duplicates and limit to 8 suggestions
+    const uniqueSuggestions = [...new Set(generatedSuggestions)].slice(0, 8);
+    setSuggestions(uniqueSuggestions);
+    
+  } catch (error) {
+    console.error('Error fetching suggestions:', error);
+    setSuggestions([]);
+  } finally {
+    setIsLoadingSuggestions(false);
+  }
+};
 
   // Handle search input change
   const handleSearchChange = (e) => {

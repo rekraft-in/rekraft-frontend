@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
+import apiService from '../services/api';
 
 const LaptopDetailPage = () => {
   const { id } = useParams();
@@ -26,7 +27,14 @@ const LaptopDetailPage = () => {
         setError(null);
         
         console.log('🔄 Fetching product details for ID:', id);
-        const response = await fetch(`http://localhost:3000/api/products/${id}`);
+        try {
+  const productData = await apiService.getProduct(id);
+  const product = productData?.data || productData;
+  setProduct(product);
+} catch (error) {
+  console.error('Error fetching product:', error);
+  navigate('/shop');
+}
         
         if (!response.ok) {
           throw new Error('Product not found');
@@ -49,7 +57,15 @@ const LaptopDetailPage = () => {
 
     const fetchRelatedProducts = async (category, currentProductId) => {
       try {
-        const response = await fetch('http://localhost:3000/api/products');
+        try {
+  const productsData = await apiService.getProducts();
+  const products = Array.isArray(productsData) ? productsData : 
+                   productsData?.data || productsData?.products || [];
+  setRelatedProducts(products.filter(p => p.id !== id).slice(0, 4));
+} catch (error) {
+  console.error('Error fetching related products:', error);
+  setRelatedProducts([]);
+}
         const allProducts = await response.json();
         
         // Filter products by same category, exclude current product

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import apiService from '../services/api';
 
 export default function SellPage() {
   const { user, login, loading: authLoading } = useAuth();
@@ -210,135 +211,126 @@ export default function SellPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Enhanced validation - check if form is actually empty
-    const requiredFields = ['brand', 'model', 'year', 'condition', 'name', 'email', 'phone', 'pincode', 'city', 'address'];
-    const emptyFields = requiredFields.filter(field => !formData[field]?.trim());
-    
-    if (emptyFields.length > 0) {
-      console.error('❌ Required fields missing:', emptyFields);
-      alert(`Please fill all required fields: ${emptyFields.join(', ')}`);
-      return;
-    }
+  // Enhanced validation - check if form is actually empty
+  const requiredFields = ['brand', 'model', 'year', 'condition', 'name', 'email', 'phone', 'pincode', 'city', 'address'];
+  const emptyFields = requiredFields.filter(field => !formData[field]?.trim());
+  
+  if (emptyFields.length > 0) {
+    console.error('❌ Required fields missing:', emptyFields);
+    alert(`Please fill all required fields: ${emptyFields.join(', ')}`);
+    return;
+  }
 
-    // Check if user is logged in
-    if (!user) {
-      setShowLoginPrompt(true);
-      saveFormProgress();
-      return;
-    }
-    
-    // Prevent duplicate submissions
-    if (isSubmitting) {
-      console.log('⏳ Already submitting, preventing duplicate');
-      return;
-    }
-    
-    setIsSubmitting(true);
-    if (submitButtonRef.current) {
-      submitButtonRef.current.disabled = true;
-    }
-    
-    console.log('🚀 Starting submission process with data:', {
-      brand: formData.brand,
-      model: formData.model,
-      year: formData.year,
-      condition: formData.condition,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      pincode: formData.pincode,
-      city: formData.city,
-      address: formData.address
-    });
-    
-    const finalPrice = calculateEstimate();
-    
-    try {
-      const submissionData = {
-        ...formData,
-        images: imagePreviews,
-        estimatedPrice: finalPrice,
-        userId: user.id
-      };
+  // Check if user is logged in
+  if (!user) {
+    setShowLoginPrompt(true);
+    saveFormProgress();
+    return;
+  }
+  
+  // Prevent duplicate submissions
+  if (isSubmitting) {
+    console.log('⏳ Already submitting, preventing duplicate');
+    return;
+  }
+  
+  setIsSubmitting(true);
+  if (submitButtonRef.current) {
+    submitButtonRef.current.disabled = true;
+  }
+  
+  console.log('🚀 Starting submission process with data:', {
+    brand: formData.brand,
+    model: formData.model,
+    year: formData.year,
+    condition: formData.condition,
+    name: formData.name,
+    email: formData.email,
+    phone: formData.phone,
+    pincode: formData.pincode,
+    city: formData.city,
+    address: formData.address
+  });
+  
+  const finalPrice = calculateEstimate();
+  
+  try {
+    const submissionData = {
+      ...formData,
+      images: imagePreviews,
+      estimatedPrice: finalPrice,
+      userId: user.id
+    };
 
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/sell', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify(submissionData),
-      });
+    // ✅ CHANGED: Use apiService instead of fetch
+    const data = await apiService.submitSellForm(submissionData);
 
-      const result = await response.json();
-
-      if (response.ok) {
-        console.log('✅ Submission successful:', result.data.submissionId);
-        
-        setSubmittedData({
-          price: finalPrice,
-          submissionId: result.data.submissionId,
-          formData: { ...formData },
-          isDuplicate: false
-        });
-        
-        setCurrentStep(5);
-        console.log('🎉 Success! Moving to step 5');
-        
-        // Clear any pending submission data
-        localStorage.removeItem('rekraftPendingSubmission');
-        localStorage.removeItem('rekraftPendingStep');
-        localStorage.removeItem('rekraftPendingImages');
-        
-      } else {
-        console.error('❌ Submission failed:', result.error);
-        alert(`Submission failed: ${result.error}`);
-      }
-      
-    } catch (error) {
-      console.error("❌ Submission error:", error);
-      
-      const submissionId = 'RK' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
-      const submissionData = {
-        id: submissionId,
-        formData: { ...formData },
-        price: finalPrice,
-        timestamp: new Date().toISOString(),
-        status: 'submitted',
-        userId: user.id
-      };
-      
-      const existingSubmissions = JSON.parse(localStorage.getItem('rekraftSubmissions') || '[]');
-      existingSubmissions.push(submissionData);
-      localStorage.setItem('rekraftSubmissions', JSON.stringify(existingSubmissions));
-      
-      console.log('💾 Submission saved locally as fallback:', submissionId);
+    if (data.success) {
+      console.log('✅ Submission successful:', data.data.submissionId);
       
       setSubmittedData({
         price: finalPrice,
-        submissionId: submissionId,
+        submissionId: data.data.submissionId,
         formData: { ...formData },
         isDuplicate: false
       });
       
       setCurrentStep(5);
+      console.log('🎉 Success! Moving to step 5');
       
-      // Clear pending data
+      // Clear any pending submission data
       localStorage.removeItem('rekraftPendingSubmission');
       localStorage.removeItem('rekraftPendingStep');
       localStorage.removeItem('rekraftPendingImages');
       
-    } finally {
-      setIsSubmitting(false);
-      if (submitButtonRef.current) {
-        submitButtonRef.current.disabled = false;
-      }
-      console.log('🏁 Submission process finished');
+    } else {
+      console.error('❌ Submission failed:', data.error);
+      alert(`Submission failed: ${data.error}`);
     }
-  };
+    
+  } catch (error) {
+    console.error("❌ Submission error:", error);
+    
+    const submissionId = 'RK' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
+    const submissionData = {
+      id: submissionId,
+      formData: { ...formData },
+      price: finalPrice,
+      timestamp: new Date().toISOString(),
+      status: 'submitted',
+      userId: user.id
+    };
+    
+    const existingSubmissions = JSON.parse(localStorage.getItem('rekraftSubmissions') || '[]');
+    existingSubmissions.push(submissionData);
+    localStorage.setItem('rekraftSubmissions', JSON.stringify(existingSubmissions));
+    
+    console.log('💾 Submission saved locally as fallback:', submissionId);
+    
+    setSubmittedData({
+      price: finalPrice,
+      submissionId: submissionId,
+      formData: { ...formData },
+      isDuplicate: false
+    });
+    
+    setCurrentStep(5);
+    
+    // Clear pending data
+    localStorage.removeItem('rekraftPendingSubmission');
+    localStorage.removeItem('rekraftPendingStep');
+    localStorage.removeItem('rekraftPendingImages');
+    
+  } finally {
+    setIsSubmitting(false);
+    if (submitButtonRef.current) {
+      submitButtonRef.current.disabled = false;
+    }
+    console.log('🏁 Submission process finished');
+  }
+};
 
   const startNewSale = () => {
     console.log('🔄 Starting new sale - resetting form...');
