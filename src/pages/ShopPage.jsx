@@ -43,17 +43,53 @@ const ErrorState = ({ error, onRetry }) => (
   </div>
 );
 
+// Helper function to calculate discount - FIXED
+const calculateDiscount = (originalPrice, currentPrice) => {
+  // Handle both string and number inputs
+  const original = typeof originalPrice === 'number' 
+    ? originalPrice 
+    : typeof originalPrice === 'string' 
+      ? parseInt(originalPrice.replace(/[^0-9]/g, '') || '0')
+      : 0;
+  
+  const current = typeof currentPrice === 'number'
+    ? currentPrice
+    : typeof currentPrice === 'string'
+      ? parseInt(currentPrice.replace(/[^0-9]/g, '') || '0')
+      : 0;
+  
+  if (original <= current || original === 0) return "0%";
+  const discount = ((original - current) / original) * 100;
+  return `${Math.round(discount)}%`;
+};
+
+// Helper function to extract numeric price - FIXED
+const extractPrice = (priceValue) => {
+  if (typeof priceValue === 'number') {
+    return priceValue;
+  } else if (typeof priceValue === 'string') {
+    return parseInt(priceValue.replace(/[^0-9]/g, '') || '0');
+  }
+  return 0;
+};
+
+// Helper function to format price for display
+const formatPrice = (priceValue) => {
+  const priceNum = extractPrice(priceValue);
+  return `₹${priceNum.toLocaleString()}`;
+};
+
+// Helper function to normalize brand name
+const normalizeBrandName = (brand) => {
+  if (!brand) return '';
+  return brand.toLowerCase().trim();
+};
+
 // Quick View Modal Component
 const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
+  const navigate = useNavigate();
+  
   if (!isOpen || !product) return null;
-
-  const calculateDiscount = (originalPrice, currentPrice) => {
-    const original = parseInt(originalPrice?.replace(/[^0-9]/g, '') || '0');
-    const current = parseInt(currentPrice?.replace(/[^0-9]/g, '') || '0');
-    if (original <= current || original === 0) return "0%";
-    const discount = ((original - current) / original) * 100;
-    return `${Math.round(discount)}%`;
-  };
 
   return (
     <motion.div
@@ -83,20 +119,30 @@ const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center border border-gray-300">
               <img 
-                src={product.image} 
-                alt={product.name} 
-                className="w-full h-64 object-contain transform hover:scale-105 transition-transform duration-500" 
+                src={product.image}
+                alt={product.name}
+                className="w-full h-64 object-contain transform hover:scale-105 transition-transform duration-500"
+                onError={(e) => {
+                  e.target.src = '/images/placeholder-laptop.png';
+                  e.target.onerror = null;
+                }}
               />
             </div>
             <div className="space-y-6">
               <div className="flex items-center gap-4">
-                <span className="text-2xl font-semibold text-gray-900 font-poppins">{product.price}</span>
-                <span className="text-base text-gray-500 line-through font-light font-roboto">
-                  {product.originalPrice}
+                <span className="text-2xl font-semibold text-gray-900 font-poppins">
+                  {formatPrice(product.price)}
                 </span>
-                <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-medium font-roboto">
-                  Save {calculateDiscount(product.originalPrice, product.price)}
-                </span>
+                {product.originalPrice && (
+                  <>
+                    <span className="text-base text-gray-500 line-through font-light font-roboto">
+                      {formatPrice(product.originalPrice)}
+                    </span>
+                    <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-medium font-roboto">
+                      Save {calculateDiscount(product.originalPrice, product.price)}
+                    </span>
+                  </>
+                )}
               </div>
               
               <div className="space-y-4">
@@ -105,48 +151,58 @@ const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
                     Condition:
                   </strong>
                   <span className="bg-[#F5F2FA] text-[#8f1eae] px-3 py-1 text-xs rounded-full font-medium font-roboto">
-                    {product.condition}
+                    {product.condition || 'Refurbished'}
                   </span>
                 </div>
                 <div className="text-sm font-roboto">
                   <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">
                     Warranty:
                   </strong> 
-                  <span className="text-gray-600 font-light ml-2 font-roboto">{product.warranty}</span>
+                  <span className="text-gray-600 font-light ml-2 font-roboto">
+                    {product.warranty || '1 Year Warranty'}
+                  </span>
                 </div>
                 <div className="text-sm font-roboto">
                   <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">
                     Brand:
                   </strong> 
-                  <span className="text-gray-600 font-light ml-2 font-roboto">{product.brand}</span>
+                  <span className="text-gray-600 font-light ml-2 font-roboto">
+                    {product.brand || 'Unknown'}
+                  </span>
                 </div>
-                <div className="text-sm font-roboto">
-                  <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">
-                    Category:
-                  </strong> 
-                  <span className="text-gray-600 font-light ml-2 font-roboto capitalize">{product.category}</span>
-                </div>
+                {product.category && (
+                  <div className="text-sm font-roboto">
+                    <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">
+                      Category:
+                    </strong> 
+                    <span className="text-gray-600 font-light ml-2 font-roboto capitalize">
+                      {product.category}
+                    </span>
+                  </div>
+                )}
               </div>
               
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide font-poppins">
-                  Key Specifications
-                </h3>
-                <ul className="space-y-3">
-                  {product.specs && product.specs.map((spec, index) => (
-                    <li key={index} className="flex items-start gap-3 text-gray-600 text-sm font-light font-roboto">
-                      <div className="w-1.5 h-1.5 bg-[#8f1eae] rounded-full mt-2 flex-shrink-0"></div>
-                      <span>{spec}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {product.specs && product.specs.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide font-poppins">
+                    Key Specifications
+                  </h3>
+                  <ul className="space-y-3">
+                    {product.specs.map((spec, index) => (
+                      <li key={index} className="flex items-start gap-3 text-gray-600 text-sm font-light font-roboto">
+                        <div className="w-1.5 h-1.5 bg-[#8f1eae] rounded-full mt-2 flex-shrink-0"></div>
+                        <span>{spec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               
               <div className="space-y-3 pt-4">
                 <button
                   onClick={() => {
                     onClose();
-                    window.location.href = `/laptop/${product.id}`;
+                    navigate(`/laptop/${product.id}`);
                   }}
                   className="block w-full bg-[#8f1eae] text-white py-3 font-medium text-sm tracking-wide uppercase transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] rounded font-roboto"
                 >
@@ -174,26 +230,6 @@ const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
       </motion.div>
     </motion.div>
   );
-};
-
-// Helper function to calculate discount
-const calculateDiscount = (originalPrice, currentPrice) => {
-  const original = parseInt(originalPrice?.replace(/[^0-9]/g, '') || '0');
-  const current = parseInt(currentPrice?.replace(/[^0-9]/g, '') || '0');
-  if (original <= current || original === 0) return "0%";
-  const discount = ((original - current) / original) * 100;
-  return `${Math.round(discount)}%`;
-};
-
-// Helper function to extract numeric price
-const extractPrice = (priceString) => {
-  return parseInt(priceString?.replace(/[^0-9]/g, '') || '0');
-};
-
-// Helper function to normalize brand name
-const normalizeBrandName = (brand) => {
-  if (!brand) return '';
-  return brand.toLowerCase().trim();
 };
 
 // Filter Sidebar Component
@@ -394,36 +430,42 @@ const ProductCard = ({
         alt={product.name}
         className="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500"
         onLoad={() => handleImageLoad(product.id)}
+        onError={(e) => {
+          e.target.src = '/images/placeholder-laptop.png';
+          e.target.onerror = null;
+        }}
       />
       
       {/* Condition Badge */}
       <div className="absolute top-4 left-4 bg-[#8f1eae] text-white px-3 py-1 text-xs rounded-full font-medium tracking-wide uppercase font-roboto">
-        {product.condition}
+        {product.condition || 'Refurbished'}
       </div>
 
       {/* Discount Badge */}
-      <div className="absolute top-4 right-4 bg-green-100 text-green-700 px-3 py-1 text-xs rounded-full font-medium font-roboto">
-        Save {calculateDiscount(product.originalPrice, product.price)}
-      </div>
+      {product.originalPrice && (
+        <div className="absolute top-4 right-4 bg-green-100 text-green-700 px-3 py-1 text-xs rounded-full font-medium font-roboto">
+          Save {calculateDiscount(product.originalPrice, product.price)}
+        </div>
+      )}
     </div>
 
     <div className="p-6">
       <div className="flex justify-between items-start mb-4">
         <h3 className="font-semibold text-gray-900 text-base leading-tight tracking-wide font-poppins">
-          {product.name}
+          {product.name || 'Unnamed Product'}
         </h3>
         <span className="text-xs px-3 py-1 rounded-full font-light bg-[#F5F2FA] text-gray-600 uppercase tracking-wide font-roboto">
-          {product.brand}
+          {product.brand || 'Unknown Brand'}
         </span>
       </div>
       
       <div className="flex items-center gap-3 mb-4">
         <span className="text-xl font-semibold text-gray-900 font-poppins">
-          ₹{extractPrice(product.price).toLocaleString()}
+          {formatPrice(product.price)}
         </span>
         {product.originalPrice && (
           <span className="text-gray-500 text-sm line-through font-light font-roboto">
-            ₹{extractPrice(product.originalPrice).toLocaleString()}
+            {formatPrice(product.originalPrice)}
           </span>
         )}
       </div>
@@ -493,7 +535,7 @@ export default function ShopPage() {
   // Available brands extracted from products
   const [availableBrands, setAvailableBrands] = useState([]);
 
-  // Fetch all products on initial load - FIXED VERSION
+  // Fetch all products on initial load
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -507,6 +549,19 @@ export default function ShopPage() {
                          productsData?.data || productsData?.products || [];
         
         console.log('✅ Backend products received:', products.length, 'products');
+        
+        // DEBUG: Log first product to see structure
+        if (products.length > 0) {
+          console.log('📦 Sample product data:', {
+            id: products[0].id,
+            name: products[0].name,
+            price: products[0].price,
+            priceType: typeof products[0].price,
+            originalPrice: products[0].originalPrice,
+            originalPriceType: typeof products[0]?.originalPrice,
+            brand: products[0].brand
+          });
+        }
         
         const brands = [...new Set(products.map(product => product.brand).filter(Boolean))].sort();
         setAvailableBrands(brands);
@@ -598,9 +653,9 @@ export default function ShopPage() {
         case "price-high":
           return priceB - priceA;
         case "name-asc":
-          return a.name.localeCompare(b.name);
+          return a.name?.localeCompare(b.name || '') || 0;
         case "name-desc":
-          return b.name.localeCompare(a.name);
+          return b.name?.localeCompare(a.name || '') || 0;
         default: // "featured"
           return 0; // Keep original order
       }
