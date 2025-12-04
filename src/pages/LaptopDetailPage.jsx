@@ -27,29 +27,33 @@ const LaptopDetailPage = () => {
         setError(null);
         
         console.log('🔄 Fetching product details for ID:', id);
-        try {
-  const productData = await apiService.getProduct(id);
-  const product = productData?.data || productData;
-  setProduct(product);
-} catch (error) {
-  console.error('Error fetching product:', error);
-  navigate('/shop');
-}
         
-        if (!response.ok) {
+        // Fixed: Use only one API call method
+        const productData = await apiService.getProduct(id);
+        
+        // Handle different response structures
+        const product = productData?.data || productData;
+        
+        if (!product) {
           throw new Error('Product not found');
         }
         
-        const productData = await response.json();
-        console.log('✅ Product details received:', productData);
-        setProduct(productData);
+        console.log('✅ Product details received:', product);
+        setProduct(product);
         
         // Fetch related products
-        await fetchRelatedProducts(productData.category, productData.id);
+        await fetchRelatedProducts(product.category, product.id);
         
       } catch (err) {
         console.error('❌ Error fetching product:', err);
-        setError(err.message);
+        setError(err.message || 'Failed to load product');
+        
+        // Navigate to shop page if product not found
+        if (err.message.includes('not found') || err.response?.status === 404) {
+          setTimeout(() => {
+            navigate('/shop');
+          }, 2000);
+        }
       } finally {
         setLoading(false);
       }
@@ -57,32 +61,32 @@ const LaptopDetailPage = () => {
 
     const fetchRelatedProducts = async (category, currentProductId) => {
       try {
-        try {
-  const productsData = await apiService.getProducts();
-  const products = Array.isArray(productsData) ? productsData : 
-                   productsData?.data || productsData?.products || [];
-  setRelatedProducts(products.filter(p => p.id !== id).slice(0, 4));
-} catch (error) {
-  console.error('Error fetching related products:', error);
-  setRelatedProducts([]);
-}
-        const allProducts = await response.json();
+        const productsData = await apiService.getProducts();
+        
+        // Handle different response structures
+        const products = Array.isArray(productsData) 
+          ? productsData 
+          : productsData?.data || productsData?.products || [];
         
         // Filter products by same category, exclude current product
-        const related = allProducts
-          .filter(p => p.category === category && p.id !== currentProductId)
+        const related = products
+          .filter(p => p.category === category && p.id !== currentProductId && p._id !== currentProductId)
           .slice(0, 4);
         
         setRelatedProducts(related);
       } catch (err) {
         console.error('Error fetching related products:', err);
+        setRelatedProducts([]);
       }
     };
 
     if (id) {
       fetchProduct();
+    } else {
+      setError('No product ID provided');
+      setLoading(false);
     }
-  }, [id]);
+  }, [id, navigate]);
 
   const showNotification = (message) => {
     setNotification({ message, isVisible: true });
@@ -95,7 +99,13 @@ const LaptopDetailPage = () => {
     try {
       console.log('🛒 Adding product to cart:', product.name);
       
-      const result = await addToCart(product.id, quantity);
+      // Ensure we're passing the correct product ID
+      const productId = product.id || product._id;
+      if (!productId) {
+        throw new Error('Product ID not found');
+      }
+      
+      const result = await addToCart(productId, quantity);
       
       if (result.success) {
         showNotification(`✅ ${quantity} ${product.name} added to cart!`);
@@ -115,14 +125,35 @@ const LaptopDetailPage = () => {
 
   const calculateDiscount = (originalPrice, currentPrice) => {
     try {
-      const original = parseInt(originalPrice?.replace(/[^0-9]/g, '') || '0');
-      const current = parseInt(currentPrice?.replace(/[^0-9]/g, '') || '0');
+      const original = typeof originalPrice === 'number' 
+        ? originalPrice 
+        : typeof originalPrice === 'string' 
+          ? parseInt(originalPrice.replace(/[^0-9]/g, '') || '0')
+          : 0;
+      
+      const current = typeof currentPrice === 'number'
+        ? currentPrice
+        : typeof currentPrice === 'string'
+          ? parseInt(currentPrice.replace(/[^0-9]/g, '') || '0')
+          : 0;
+      
       if (original <= current || original === 0) return "0%";
       const discount = ((original - current) / original) * 100;
       return `${Math.round(discount)}%`;
     } catch {
       return "0%";
     }
+  };
+
+  // Format price for display
+  const formatPrice = (priceValue) => {
+    if (typeof priceValue === 'number') {
+      return `₹${priceValue.toLocaleString()}`;
+    } else if (typeof priceValue === 'string') {
+      const num = parseInt(priceValue.replace(/[^0-9]/g, '') || '0');
+      return `₹${num.toLocaleString()}`;
+    }
+    return '₹0';
   };
 
   // Loading state
@@ -149,12 +180,20 @@ const LaptopDetailPage = () => {
           <p className="text-gray-600 mb-6 max-w-md mx-auto font-light text-base">
             {error || "We couldn't find the product you're looking for."}
           </p>
-          <Link 
-            to="/shop" 
-            className="bg-[#8f1eae] text-white px-6 py-3 font-medium hover:bg-[#7a1a99] transition-colors tracking-widest rounded"
-          >
-            BACK TO SHOP
-          </Link>
+          <div className="space-y-4">
+            <Link 
+              to="/shop" 
+              className="block bg-[#8f1eae] text-white px-6 py-3 font-medium hover:bg-[#7a1a99] transition-colors tracking-widest rounded"
+            >
+              BACK TO SHOP
+            </Link>
+            <button
+              onClick={() => window.location.reload()}
+              className="block border border-gray-900 text-gray-900 px-6 py-3 font-medium hover:bg-black hover:text-white transition-colors tracking-widest rounded"
+            >
+              TRY AGAIN
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -163,7 +202,9 @@ const LaptopDetailPage = () => {
   // Use product.images if available, otherwise create array with main image
   const productImages = product.images && Array.isArray(product.images) 
     ? product.images 
-    : [product.image || '/placeholder-image.jpg'];
+    : product.image 
+      ? [product.image] 
+      : ['/images/placeholder-laptop.png'];
 
   return (
     <div className="pt-20 min-h-screen bg-white font-roboto">
@@ -179,6 +220,7 @@ const LaptopDetailPage = () => {
         </motion.div>
       )}
 
+      {/* Rest of your component remains the same... */}
       {/* Hero Section */}
       <section className="relative bg-white pt-24 pb-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#F5F2FA] to-white z-0"></div>
@@ -205,6 +247,9 @@ const LaptopDetailPage = () => {
                     src={productImages[selectedImage]}
                     alt={product.name}
                     className="w-full h-96 object-contain transform group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => {
+                      e.target.src = '/images/placeholder-laptop.png';
+                    }}
                   />
                 </div>
                 {productImages.length > 1 && (
@@ -213,7 +258,7 @@ const LaptopDetailPage = () => {
                       <button
                         key={index}
                         onClick={() => setSelectedImage(index)}
-                        className={`bg-white border border-gray-300 rounded p-2 transition-all duration-300 ${
+                        className={`bg-white border rounded p-2 transition-all duration-300 ${
                           selectedImage === index 
                             ? 'border-[#8f1eae] scale-105' 
                             : 'border-gray-300 hover:border-[#8f1eae]'
@@ -223,6 +268,9 @@ const LaptopDetailPage = () => {
                           src={image}
                           alt={`${product.name} view ${index + 1}`}
                           className="w-16 h-16 object-contain"
+                          onError={(e) => {
+                            e.target.src = '/images/placeholder-laptop.png';
+                          }}
                         />
                       </button>
                     ))}
@@ -248,7 +296,7 @@ const LaptopDetailPage = () => {
                       <span className="text-gray-500 font-light text-sm">{product.reviews || 50} REVIEWS</span>
                     </div>
                     <span className="bg-[#8f1eae]/10 text-[#8f1eae] px-3 py-1 font-medium text-xs tracking-widest rounded-full">
-                      {product.condition.toUpperCase()}
+                      {(product.condition || 'EXCELLENT').toUpperCase()}
                     </span>
                   </div>
                 </div>
@@ -261,14 +309,22 @@ const LaptopDetailPage = () => {
                   className="space-y-4"
                 >
                   <div className="flex flex-wrap items-center gap-4">
-                    <span className="text-3xl lg:text-4xl font-semibold text-gray-900">{product.price}</span>
-                    <span className="text-xl text-gray-400 line-through font-light">{product.originalPrice}</span>
-                    <span className="bg-[#10B981] text-white px-3 py-2 font-medium text-xs tracking-widest rounded">
-                      SAVE {calculateDiscount(product.originalPrice, product.price)}
+                    <span className="text-3xl lg:text-4xl font-semibold text-gray-900">
+                      {formatPrice(product.price)}
                     </span>
+                    {product.originalPrice && (
+                      <>
+                        <span className="text-xl text-gray-400 line-through font-light">
+                          {formatPrice(product.originalPrice)}
+                        </span>
+                        <span className="bg-[#10B981] text-white px-3 py-2 font-medium text-xs tracking-widest rounded">
+                          SAVE {calculateDiscount(product.originalPrice, product.price)}
+                        </span>
+                      </>
+                    )}
                   </div>
                   <p className="text-gray-600 leading-relaxed font-light text-base max-w-lg">
-                    {product.description}
+                    {product.description || 'No description available.'}
                   </p>
                 </motion.div>
 
@@ -277,7 +333,7 @@ const LaptopDetailPage = () => {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3 group">
                       <div className="w-1.5 h-1.5 bg-[#8f1eae] rounded-full group-hover:scale-150 transition-transform duration-300"></div>
-                      <span className="text-gray-700 font-light text-sm">BRAND: <span className="text-gray-900 font-medium capitalize">{product.brand}</span></span>
+                      <span className="text-gray-700 font-light text-sm">BRAND: <span className="text-gray-900 font-medium capitalize">{product.brand || 'Unknown'}</span></span>
                     </div>
                     <div className="flex items-center space-x-3 group">
                       <div className="w-1.5 h-1.5 bg-[#8f1eae] rounded-full group-hover:scale-150 transition-transform duration-300"></div>
@@ -287,12 +343,12 @@ const LaptopDetailPage = () => {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3 group">
                       <div className="w-1.5 h-1.5 bg-[#8f1eae] rounded-full group-hover:scale-150 transition-transform duration-300"></div>
-                      <span className="text-gray-700 font-light text-sm">CONDITION: <span className="text-[#8f1eae] font-medium">{product.condition.toUpperCase()}</span></span>
+                      <span className="text-gray-700 font-light text-sm">CONDITION: <span className="text-[#8f1eae] font-medium">{(product.condition || 'EXCELLENT').toUpperCase()}</span></span>
                     </div>
                     <div className="flex items-center space-x-3 group">
                       <div className="w-1.5 h-1.5 bg-[#8f1eae] rounded-full group-hover:scale-150 transition-transform duration-300"></div>
-                      <span className={`font-medium text-sm ${product.inStock ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
-                        {product.inStock ? 'IN STOCK' : 'OUT OF STOCK'}
+                      <span className={`font-medium text-sm ${(product.inStock !== false) ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
+                        {(product.inStock !== false) ? 'IN STOCK' : 'OUT OF STOCK'}
                       </span>
                     </div>
                   </div>
@@ -332,20 +388,21 @@ const LaptopDetailPage = () => {
                 >
                   <button
                     onClick={handleAddToCart}
-                    disabled={!product.inStock}
+                    disabled={product.inStock === false}
                     className="flex-1 bg-[#8f1eae] text-white py-3 font-medium tracking-widest hover:bg-[#7a1a99] transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed border border-[#8f1eae] rounded"
                   >
                     ADD TO CART
                   </button>
                   <button
                     onClick={handleBuyNow}
-                    disabled={!product.inStock}
+                    disabled={product.inStock === false}
                     className="flex-1 bg-transparent text-[#8f1eae] py-3 font-medium tracking-widest hover:bg-[#8f1eae] hover:text-white transition-all duration-300 transform hover:scale-105 border-2 border-[#8f1eae] disabled:opacity-50 disabled:cursor-not-allowed rounded"
                   >
                     BUY NOW
                   </button>
                 </motion.div>
 
+                {/* Rest of your component continues... */}
                 {/* Trust Badges */}
                 <div className="grid grid-cols-3 gap-4 pt-8 border-t border-gray-300">
                   <div className="text-center p-4 group hover:bg-[#F5F2FA] transition-colors duration-300 rounded">
