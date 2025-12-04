@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
 import apiService from '../services/api';
@@ -39,17 +39,6 @@ import {
 // Helper function to get product ID (handles both id and _id)
 const getProductId = (product) => {
   return product.id || product._id;
-};
-
-// Color constants for consistency
-const COLORS = {
-  white: '#FFFFFF',
-  lightBg: '#F5F2FA', 
-  accent: '#8f1eae',
-  accentHover: '#7a1a95',
-  textPrimary: '#111827',
-  textSecondary: '#6B7280',
-  border: '#D1D5DB'
 };
 
 // Loading Spinner Component

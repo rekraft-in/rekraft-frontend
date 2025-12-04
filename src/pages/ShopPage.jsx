@@ -1,250 +1,215 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
-import { Search, X, Filter, ChevronDown } from "lucide-react";
+import { Search, X, Filter, ChevronDown, ShoppingCart } from "lucide-react";
 import apiService from '../services/api';
 
+// ========== REUSABLE COMPONENTS ==========
+
 // Loading Spinner Component
-const LoadingSpinner = () => (
-  <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-    <div className="w-6 h-6 border-2 border-gray-300 border-t-[#8f1eae] rounded-full animate-spin"></div>
-  </div>
-);
+const LoadingSpinner = ({ size = "md", fullPage = false }) => {
+  const sizeClass = size === "sm" ? "w-4 h-4" : size === "lg" ? "w-12 h-12" : "w-8 h-8";
+  
+  if (fullPage) {
+    return (
+      <div className="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
+        <div className={`${sizeClass} border-2 border-gray-300 border-t-[#8f1eae] rounded-full animate-spin`} />
+      </div>
+    );
+  }
+  
+  return (
+    <div className={`${sizeClass} border-2 border-gray-300 border-t-[#8f1eae] rounded-full animate-spin`} />
+  );
+};
 
 // Error State Component
 const ErrorState = ({ error, onRetry }) => (
-  <div className="text-center py-16 bg-white rounded-lg border border-gray-300 p-8">
+  <div className="text-center py-16 bg-white rounded-lg border border-gray-200 p-8">
     <div className="text-4xl mb-4 text-gray-400">⚠️</div>
-    <h3 className="text-xl font-semibold text-gray-900 mb-3 uppercase tracking-wide font-poppins">
+    <h3 className="text-xl font-semibold text-gray-900 mb-3 uppercase tracking-wide">
       Unable to Load Products
     </h3>
-    <p className="text-gray-600 mb-4 max-w-md mx-auto text-sm font-light font-roboto">
+    <p className="text-gray-600 mb-4 max-w-md mx-auto text-sm">
       {error || "We're having trouble loading our products. Please check your connection and try again."}
     </p>
     <div className="flex flex-col sm:flex-row gap-3 justify-center">
       <button
         onClick={onRetry}
-        className="bg-[#8f1eae] text-white px-6 py-3 rounded font-medium text-sm tracking-wide uppercase transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] font-roboto"
+        className="bg-[#8f1eae] text-white px-6 py-3 rounded font-medium text-sm tracking-wide uppercase transition-colors hover:bg-[#7a1a99]"
       >
         Try Again
       </button>
       <button
         onClick={() => window.location.reload()}
-        className="border border-gray-900 text-gray-900 px-6 py-3 rounded font-medium text-sm tracking-wide uppercase transition-all duration-300 hover:bg-black hover:text-white font-roboto"
+        className="border border-gray-900 text-gray-900 px-6 py-3 rounded font-medium text-sm tracking-wide uppercase transition-colors hover:bg-black hover:text-white"
       >
         Reload Page
       </button>
     </div>
-    <p className="text-xs text-gray-500 mt-6 font-light font-roboto">
-      If the problem persists, please contact our support team.
-    </p>
   </div>
 );
 
-// Helper function to calculate discount - FIXED
+// Helper function to calculate discount
 const calculateDiscount = (originalPrice, currentPrice) => {
-  // Handle both string and number inputs
-  const original = typeof originalPrice === 'number' 
-    ? originalPrice 
-    : typeof originalPrice === 'string' 
-      ? parseInt(originalPrice.replace(/[^0-9]/g, '') || '0')
-      : 0;
+  const original = Number(originalPrice) || 0;
+  const current = Number(currentPrice) || 0;
   
-  const current = typeof currentPrice === 'number'
-    ? currentPrice
-    : typeof currentPrice === 'string'
-      ? parseInt(currentPrice.replace(/[^0-9]/g, '') || '0')
-      : 0;
-  
-  if (original <= current || original === 0) return "0%";
-  const discount = ((original - current) / original) * 100;
-  return `${Math.round(discount)}%`;
-};
-
-// Helper function to extract numeric price - FIXED
-const extractPrice = (priceValue) => {
-  if (typeof priceValue === 'number') {
-    return priceValue;
-  } else if (typeof priceValue === 'string') {
-    return parseInt(priceValue.replace(/[^0-9]/g, '') || '0');
-  }
-  return 0;
+  if (original <= current || original === 0) return 0;
+  return Math.round(((original - current) / original) * 100);
 };
 
 // Helper function to format price for display
 const formatPrice = (priceValue) => {
-  const priceNum = extractPrice(priceValue);
+  const priceNum = Number(priceValue) || 0;
   return `₹${priceNum.toLocaleString()}`;
 };
 
 // Helper function to normalize brand name
 const normalizeBrandName = (brand) => {
-  if (!brand) return '';
-  return brand.toLowerCase().trim();
+  return (brand || '').toLowerCase().trim();
 };
 
-// Get product ID (handles both id and _id fields)
+// Get product ID
 const getProductId = (product) => {
   return product.id || product._id;
 };
 
-// Quick View Modal Component
-const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
+// Quick View Modal Component - Memoized
+const QuickViewModal = React.memo(({ product, isOpen, onClose, onAddToCart }) => {
   const navigate = useNavigate();
   
   if (!isOpen || !product) return null;
 
+  const discount = calculateDiscount(product.originalPrice, product.price);
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <AnimatePresence>
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-300"
-        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        onClick={onClose}
       >
-        <div className="p-8">
-          <div className="flex justify-between items-start mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900 tracking-wide uppercase font-poppins">
-              {product.name}
-            </h2>
-            <button 
-              onClick={onClose} 
-              className="text-gray-500 hover:text-gray-700 transition-colors p-2 hover:bg-gray-100 rounded font-roboto"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center border border-gray-300">
-              <img 
-                src={product.image}
-                alt={product.name}
-                className="w-full h-64 object-contain transform hover:scale-105 transition-transform duration-500"
-                onError={(e) => {
-                  e.target.src = '/images/placeholder-laptop.png';
-                  e.target.onerror = null;
-                }}
-              />
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {product.name}
+              </h2>
+              <button 
+                onClick={onClose} 
+                className="text-gray-500 hover:text-gray-700 transition-colors p-2"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <span className="text-2xl font-semibold text-gray-900 font-poppins">
-                  {formatPrice(product.price)}
-                </span>
-                {product.originalPrice && (
-                  <>
-                    <span className="text-base text-gray-500 line-through font-light font-roboto">
-                      {formatPrice(product.originalPrice)}
-                    </span>
-                    <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-medium font-roboto">
-                      Save {calculateDiscount(product.originalPrice, product.price)}
-                    </span>
-                  </>
-                )}
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 rounded-lg p-6 flex items-center justify-center">
+                <img 
+                  src={product.image || '/images/placeholder-laptop.png'}
+                  alt={product.name}
+                  className="w-full h-64 object-contain"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.target.src = '/images/placeholder-laptop.png';
+                  }}
+                />
               </div>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <strong className="text-gray-700 text-sm font-medium uppercase tracking-wide font-inter">
-                    Condition:
-                  </strong>
-                  <span className="bg-[#F5F2FA] text-[#8f1eae] px-3 py-1 text-xs rounded-full font-medium font-roboto">
-                    {product.condition || 'Refurbished'}
+                  <span className="text-2xl font-bold text-gray-900">
+                    {formatPrice(product.price)}
                   </span>
+                  {discount > 0 && (
+                    <>
+                      <span className="text-base text-gray-500 line-through">
+                        {formatPrice(product.originalPrice)}
+                      </span>
+                      <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
+                        Save {discount}%
+                      </span>
+                    </>
+                  )}
                 </div>
-                <div className="text-sm font-roboto">
-                  <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">
-                    Warranty:
-                  </strong> 
-                  <span className="text-gray-600 font-light ml-2 font-roboto">
-                    {product.warranty || '1 Year Warranty'}
-                  </span>
-                </div>
-                <div className="text-sm font-roboto">
-                  <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">
-                    Brand:
-                  </strong> 
-                  <span className="text-gray-600 font-light ml-2 font-roboto">
-                    {product.brand || 'Unknown'}
-                  </span>
-                </div>
-                {product.category && (
-                  <div className="text-sm font-roboto">
-                    <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">
-                      Category:
-                    </strong> 
-                    <span className="text-gray-600 font-light ml-2 font-roboto capitalize">
-                      {product.category}
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <strong className="text-gray-700 text-sm font-medium">Condition:</strong>
+                    <span className="bg-[#F5F2FA] text-[#8f1eae] px-2 py-1 text-xs rounded-full font-medium">
+                      {product.condition || 'Refurbished'}
                     </span>
                   </div>
-                )}
-              </div>
-              
-              {product.specs && product.specs.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide font-poppins">
-                    Key Specifications
-                  </h3>
-                  <ul className="space-y-3">
-                    {product.specs.map((spec, index) => (
-                      <li key={index} className="flex items-start gap-3 text-gray-600 text-sm font-light font-roboto">
-                        <div className="w-1.5 h-1.5 bg-[#8f1eae] rounded-full mt-2 flex-shrink-0"></div>
-                        <span>{spec}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  
+                  <div className="text-sm">
+                    <strong className="text-gray-700 font-medium">Warranty:</strong>
+                    <span className="text-gray-600 ml-2">{product.warranty || '1 Year'}</span>
+                  </div>
+                  
+                  <div className="text-sm">
+                    <strong className="text-gray-700 font-medium">Brand:</strong>
+                    <span className="text-gray-600 ml-2">{product.brand || 'Unknown'}</span>
+                  </div>
                 </div>
-              )}
-              
-              <div className="space-y-3 pt-4">
-                <button
-                  onClick={() => {
-                    onClose();
-                    const productId = getProductId(product);
-                    if (productId) {
-                      navigate(`/laptop/${productId}`);
-                    } else {
-                      console.error('Product has no ID:', product);
+                
+                {product.specs && product.specs.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2 text-sm">Key Specifications</h3>
+                    <ul className="space-y-1">
+                      {product.specs.slice(0, 3).map((spec, index) => (
+                        <li key={index} className="flex items-start gap-2 text-gray-600 text-sm">
+                          <span className="w-1 h-1 bg-[#8f1eae] rounded-full mt-2 flex-shrink-0"></span>
+                          <span>{spec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                <div className="space-y-2 pt-4">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      const productId = getProductId(product);
+                      if (productId) navigate(`/laptop/${productId}`);
+                    }}
+                    className="w-full bg-[#8f1eae] text-white py-3 rounded font-medium text-sm hover:bg-[#7a1a99] transition-colors"
+                  >
+                    View Full Details
+                  </button>
+                  <button 
+                    onClick={() => {
                       onAddToCart(product);
-                    }
-                  }}
-                  className="block w-full bg-[#8f1eae] text-white py-3 font-medium text-sm tracking-wide uppercase transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] rounded font-roboto"
-                >
-                  View Full Details
-                </button>
-                <button 
-                  onClick={() => {
-                    onAddToCart(product);
-                    onClose();
-                  }}
-                  className="w-full bg-green-600 text-white py-3 font-medium text-sm tracking-wide uppercase transition-all duration-300 hover:bg-green-700 rounded font-roboto"
-                >
-                  Add to Cart
-                </button>
-                <button 
-                  onClick={onClose}
-                  className="w-full border border-gray-300 text-gray-700 py-3 font-medium text-sm tracking-wide uppercase transition-all duration-300 hover:border-[#8f1eae] hover:text-[#8f1eae] rounded font-roboto"
-                >
-                  Continue Shopping
-                </button>
+                      onClose();
+                    }}
+                    className="w-full bg-green-600 text-white py-3 rounded font-medium text-sm hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Add to Cart
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </AnimatePresence>
   );
-};
+});
 
-// Filter Sidebar Component
-const FilterSidebar = ({ 
+// Filter Sidebar Component - Memoized
+const FilterSidebar = React.memo(({ 
   searchQuery, 
   handleShopSearchChange,
   handleClearShopSearch,
@@ -265,18 +230,18 @@ const FilterSidebar = ({
       <div className="lg:hidden mb-4">
         <button
           onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 text-gray-700 rounded text-sm font-medium tracking-wide uppercase transition-all duration-300 hover:border-[#8f1eae] hover:text-[#8f1eae] font-roboto"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:border-[#8f1eae] hover:text-[#8f1eae] transition-colors"
         >
           <Filter className="w-4 h-4" />
           {isMobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
         </button>
       </div>
 
-      {/* Filter Sidebar - Desktop & Mobile */}
-      <div className={`${isMobileFiltersOpen ? 'block' : 'hidden lg:block'} space-y-6`}>
+      {/* Filter Sidebar */}
+      <div className={`${isMobileFiltersOpen ? 'block' : 'hidden lg:block'} space-y-4`}>
         {/* Search Filter */}
-        <div className="p-6 border border-gray-300 bg-white rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide flex items-center gap-2 font-poppins">
+        <div className="p-4 border border-gray-200 bg-white rounded-lg">
+          <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
             <Search className="w-4 h-4" />
             Search Products
           </h3>
@@ -286,12 +251,12 @@ const FilterSidebar = ({
               placeholder="Search by name, brand, specs..."
               value={searchQuery}
               onChange={(e) => handleShopSearchChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] text-gray-900 placeholder-gray-500 font-light font-roboto"
+              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] placeholder-gray-400"
             />
             {searchQuery && (
               <button
                 onClick={handleClearShopSearch}
-                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -300,13 +265,11 @@ const FilterSidebar = ({
         </div>
 
         {/* Brand Filter */}
-        <div className="p-6 border border-gray-300 bg-white rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide font-poppins">
-            Filter by Brand
-          </h3>
-          <div className="space-y-3 max-h-60 overflow-y-auto">
+        <div className="p-4 border border-gray-200 bg-white rounded-lg">
+          <h3 className="font-semibold text-gray-900 mb-3 text-sm">Filter by Brand</h3>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
             {availableBrands.map(brand => (
-              <div key={brand} className="flex items-center gap-3">
+              <div key={brand} className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id={`brand-${brand}`}
@@ -316,7 +279,7 @@ const FilterSidebar = ({
                 />
                 <label 
                   htmlFor={`brand-${brand}`}
-                  className="text-sm text-gray-700 font-light cursor-pointer hover:text-[#8f1eae] transition-colors font-roboto"
+                  className="text-sm text-gray-700 cursor-pointer hover:text-[#8f1eae] transition-colors"
                 >
                   {brand}
                 </label>
@@ -326,67 +289,46 @@ const FilterSidebar = ({
         </div>
 
         {/* Price Range Filter */}
-        <div className="p-6 border border-gray-300 bg-white rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide font-poppins">
-            Price Range
-          </h3>
-          <div className="space-y-4">
-            <div className="flex gap-3">
+        <div className="p-4 border border-gray-200 bg-white rounded-lg">
+          <h3 className="font-semibold text-gray-900 mb-3 text-sm">Price Range</h3>
+          <div className="space-y-3">
+            <div className="flex gap-2">
               <div className="flex-1">
-                <label className="text-xs mb-2 block text-gray-600 font-light uppercase tracking-wide font-inter">
-                  Min Price (₹)
-                </label>
+                <label className="text-xs mb-1 block text-gray-600">Min Price (₹)</label>
                 <input
                   type="number"
                   min="0"
                   max="1000000"
                   value={priceRange[0]}
-                  onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] font-light font-roboto"
+                  onChange={(e) => setPriceRange([Number(e.target.value) || 0, priceRange[1]])}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae]"
                 />
               </div>
               <div className="flex-1">
-                <label className="text-xs mb-2 block text-gray-600 font-light uppercase tracking-wide font-inter">
-                  Max Price (₹)
-                </label>
+                <label className="text-xs mb-1 block text-gray-600">Max Price (₹)</label>
                 <input
                   type="number"
                   min="0"
                   max="1000000"
                   value={priceRange[1]}
-                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 100000])}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] font-light font-roboto"
+                  onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value) || 100000])}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae]"
                 />
-              </div>
-            </div>
-            <div className="pt-2">
-              <input
-                type="range"
-                min="0"
-                max="100000"
-                step="5000"
-                value={priceRange[1]}
-                onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                className="w-full h-1 rounded appearance-none cursor-pointer bg-gray-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#8f1eae]"
-              />
-              <div className="flex justify-between text-xs mt-2 text-gray-600 font-light font-roboto">
-                <span>₹{priceRange[0].toLocaleString()}</span>
-                <span>₹{priceRange[1].toLocaleString()}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Sort Filter */}
-        <div className="p-6 border border-gray-300 bg-white rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide flex items-center gap-2 font-poppins">
+        <div className="p-4 border border-gray-200 bg-white rounded-lg">
+          <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
             <ChevronDown className="w-4 h-4" />
             Sort By
           </h3>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] text-gray-900 bg-white font-light font-roboto"
+            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] bg-white"
           >
             <option value="featured">Featured</option>
             <option value="price-low">Price: Low to High</option>
@@ -399,42 +341,39 @@ const FilterSidebar = ({
         {/* Reset Filters Button */}
         <button
           onClick={resetAllFilters}
-          className="w-full py-3 border border-gray-900 text-gray-900 rounded text-sm font-medium tracking-wide uppercase transition-all duration-300 hover:bg-black hover:text-white font-roboto"
+          className="w-full py-2 border border-gray-900 text-gray-900 rounded text-sm font-medium hover:bg-black hover:text-white transition-colors"
         >
           Reset All Filters
         </button>
 
         {/* Mobile Filter Close Button */}
-        <div className="lg:hidden">
+        {isMobileFiltersOpen && (
           <button
             onClick={() => setIsMobileFiltersOpen(false)}
-            className="w-full py-3 bg-[#8f1eae] text-white rounded text-sm font-medium tracking-wide uppercase transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] font-roboto"
+            className="w-full py-2 bg-[#8f1eae] text-white rounded text-sm font-medium hover:bg-[#7a1a99] transition-colors lg:hidden"
           >
             Apply Filters
           </button>
-        </div>
+        )}
       </div>
     </>
   );
-};
+});
 
-// Product Card Component
-const ProductCard = ({ 
+// Product Card Component - Memoized
+const ProductCard = React.memo(({ 
   product, 
-  imagesLoaded, 
-  handleImageLoad, 
   handleProductClick, 
   setSelectedProduct, 
   handleAddToCart 
 }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
   const productId = getProductId(product);
+  const discount = calculateDiscount(product.originalPrice, product.price);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      className="bg-white group cursor-pointer border border-gray-300 rounded-lg overflow-hidden hover:border-[#8f1eae] transition-all duration-300"
+    <div
+      className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer group"
       onClick={() => {
         if (productId) {
           handleProductClick(productId);
@@ -444,69 +383,76 @@ const ProductCard = ({
         }
       }}
     >
-      <div className="relative bg-gray-100 aspect-square">
-        {!imagesLoaded[productId] && <LoadingSpinner />}
+      <div className="relative bg-gray-50 aspect-square">
+        {!imageLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <LoadingSpinner size="sm" />
+          </div>
+        )}
         <img
-          src={product.image}
+          src={product.image || '/images/placeholder-laptop.png'}
           alt={product.name}
-          className="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500"
-          onLoad={() => handleImageLoad(productId)}
+          className={`w-full h-full object-contain p-4 transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          loading="lazy"
+          onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             e.target.src = '/images/placeholder-laptop.png';
-            e.target.onerror = null;
+            setImageLoaded(true);
           }}
         />
         
         {/* Condition Badge */}
-        <div className="absolute top-4 left-4 bg-[#8f1eae] text-white px-3 py-1 text-xs rounded-full font-medium tracking-wide uppercase font-roboto">
+        <div className="absolute top-3 left-3 bg-[#8f1eae] text-white px-2 py-1 text-xs rounded-full font-medium">
           {product.condition || 'Refurbished'}
         </div>
 
         {/* Discount Badge */}
-        {product.originalPrice && (
-          <div className="absolute top-4 right-4 bg-green-100 text-green-700 px-3 py-1 text-xs rounded-full font-medium font-roboto">
-            Save {calculateDiscount(product.originalPrice, product.price)}
+        {discount > 0 && (
+          <div className="absolute top-3 right-3 bg-green-100 text-green-700 px-2 py-1 text-xs rounded-full font-medium">
+            Save {discount}%
           </div>
         )}
       </div>
 
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="font-semibold text-gray-900 text-base leading-tight tracking-wide font-poppins">
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">
             {product.name || 'Unnamed Product'}
           </h3>
-          <span className="text-xs px-3 py-1 rounded-full font-light bg-[#F5F2FA] text-gray-600 uppercase tracking-wide font-roboto">
-            {product.brand || 'Unknown Brand'}
+          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 ml-2 flex-shrink-0">
+            {product.brand || 'Unknown'}
           </span>
         </div>
         
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-xl font-semibold text-gray-900 font-poppins">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg font-bold text-gray-900">
             {formatPrice(product.price)}
           </span>
-          {product.originalPrice && (
-            <span className="text-gray-500 text-sm line-through font-light font-roboto">
+          {discount > 0 && (
+            <span className="text-gray-500 text-sm line-through">
               {formatPrice(product.originalPrice)}
             </span>
           )}
         </div>
         
-        <div className="text-sm text-gray-600 mb-6 space-y-3 font-light font-roboto">
-          {product.specs && product.specs.slice(0, 3).map((spec, index) => (
-            <div key={index} className="flex items-start gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#8f1eae] flex-shrink-0 mt-1.5"></div>
-              <span className="leading-relaxed">{spec}</span>
-            </div>
-          ))}
-        </div>
+        {product.specs && product.specs.length > 0 && (
+          <div className="text-sm text-gray-600 mb-4 space-y-1">
+            {product.specs.slice(0, 2).map((spec, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <span className="w-1 h-1 rounded-full bg-[#8f1eae] mt-2 flex-shrink-0"></span>
+                <span className="line-clamp-1">{spec}</span>
+              </div>
+            ))}
+          </div>
+        )}
         
-        <div className="space-y-3">
+        <div className="space-y-2">
           <button 
             onClick={(e) => {
               e.stopPropagation();
               setSelectedProduct(product);
             }}
-            className="w-full border border-gray-900 text-gray-900 py-3 font-medium text-sm tracking-wide uppercase rounded transition-all duration-300 hover:bg-black hover:text-white font-roboto"
+            className="w-full border border-gray-900 text-gray-900 py-2 text-sm font-medium rounded hover:bg-black hover:text-white transition-colors"
           >
             Quick View
           </button>
@@ -516,15 +462,43 @@ const ProductCard = ({
               e.stopPropagation();
               handleAddToCart(product);
             }}
-            className="w-full bg-[#8f1eae] text-white py-3 font-medium text-sm tracking-wide uppercase rounded transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] font-roboto"
+            className="w-full bg-[#8f1eae] text-white py-2 text-sm font-medium rounded hover:bg-[#7a1a99] transition-colors flex items-center justify-center gap-2"
           >
+            <ShoppingCart className="w-4 h-4" />
             Add to Cart
           </button>
         </div>
       </div>
+    </div>
+  );
+});
+
+// Notification Component
+const Notification = React.memo(({ message, isVisible, onHide }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(onHide, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onHide]);
+
+  if (!isVisible) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="fixed top-24 right-4 bg-[#8f1eae] text-white px-4 py-3 rounded shadow-lg z-50 max-w-xs"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">{message}</span>
+      </div>
     </motion.div>
   );
-};
+});
+
+// ========== MAIN SHOP PAGE COMPONENT ==========
 
 export default function ShopPage() {
   const navigate = useNavigate();
@@ -532,306 +506,278 @@ export default function ShopPage() {
   const { addToCart } = useAuth();
   
   // Read URL parameters
-  const searchParams = new URLSearchParams(location.search);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const urlSearch = searchParams.get('search');
   const urlCategory = searchParams.get('category');
   
-  // State for all products and filters
+  // State
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  
-  // Filter states
   const [searchQuery, setSearchQuery] = useState(urlSearch || "");
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [sortBy, setSortBy] = useState("featured");
-  
-  // UI states
-  const [imagesLoaded, setImagesLoaded] = useState({});
-  const [notification, setNotification] = useState({ message: "", isVisible: false });
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
-  
-  // Available brands extracted from products
+  const [notification, setNotification] = useState({ message: "", isVisible: false });
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [availableBrands, setAvailableBrands] = useState([]);
 
-  // Fetch all products on initial load
+  // Initial fetch with caching
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        setError(null);
         
-        console.log('🔄 Fetching all products from backend...');
+        // Check cache first (5 minute cache)
+        const cacheKey = 'shop_products_cache';
+        const cachedData = localStorage.getItem(cacheKey);
         
-        const productsData = await apiService.getProducts();
+        if (cachedData) {
+          const { data, timestamp } = JSON.parse(cachedData);
+          const isCacheValid = Date.now() - timestamp < 5 * 60 * 1000; // 5 minutes
+          
+          if (isCacheValid && data && data.length > 0) {
+            console.log('📦 Using cached products');
+            processProducts(data);
+            setLoading(false);
+            return;
+          }
+        }
+
+        console.log('🔄 Fetching products from API...');
+        const response = await apiService.getProducts();
         
-        // Handle different response structures
-        let products = [];
-        if (Array.isArray(productsData)) {
-          products = productsData;
-        } else if (productsData?.data && Array.isArray(productsData.data)) {
-          products = productsData.data;
-        } else if (productsData?.products && Array.isArray(productsData.products)) {
-          products = productsData.products;
-        } else if (typeof productsData === 'object' && productsData !== null) {
-          // If it's a single product object, wrap it in an array
-          products = [productsData];
+        // Handle response structure
+        let productsData = [];
+        if (Array.isArray(response)) {
+          productsData = response;
+        } else if (response?.data && Array.isArray(response.data)) {
+          productsData = response.data;
+        } else if (response?.products && Array.isArray(response.products)) {
+          productsData = response.products;
+        } else if (response && typeof response === 'object') {
+          productsData = [response];
         }
         
-        console.log('✅ Backend products received:', products.length, 'products');
-        
-        // Debug: Log first few products to see their structure
-        if (products.length > 0) {
-          console.log('📦 Sample product data:', {
-            id: products[0].id,
-            _id: products[0]._id,
-            name: products[0].name,
-            price: products[0].price,
-            priceType: typeof products[0].price,
-            originalPrice: products[0].originalPrice,
-            originalPriceType: typeof products[0]?.originalPrice,
-            brand: products[0].brand
-          });
+        // Cache the response
+        if (productsData.length > 0) {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data: productsData,
+            timestamp: Date.now()
+          }));
         }
         
-        // Extract unique brands
-        const brands = [...new Set(
-          products
-            .map(product => product.brand)
-            .filter(Boolean)
-            .map(brand => brand.trim())
-        )].sort();
-        
-        setAvailableBrands(brands);
-        setProducts(products);
-        setFilteredProducts(products);
+        processProducts(productsData);
         
       } catch (err) {
         console.error('❌ Error fetching products:', err);
-        setError(err.message || 'Failed to load products');
+        setError('Failed to load products. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, [retryCount]);
 
-  // Update searchQuery when URL parameter changes
-  useEffect(() => {
-    if (urlSearch !== null) {
-      setSearchQuery(urlSearch);
-    }
-  }, [urlSearch]);
+    // Cleanup function
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
 
-  // Handle category parameter from URL (from footer brand links)
+  const processProducts = (productsData) => {
+    setProducts(productsData);
+    
+    // Extract unique brands
+    const brands = [...new Set(
+      productsData
+        .map(product => product.brand)
+        .filter(Boolean)
+        .map(brand => brand.trim())
+    )].sort();
+    
+    setAvailableBrands(brands);
+  };
+
+  // Handle URL category parameter
   useEffect(() => {
-    if (urlCategory && products.length > 0) {
-      console.log('📱 URL Category detected:', urlCategory);
-      
-      // Find the brand that matches the category (case-insensitive)
+    if (urlCategory && availableBrands.length > 0) {
       const normalizedCategory = normalizeBrandName(urlCategory);
       const matchingBrand = availableBrands.find(brand => 
         normalizeBrandName(brand) === normalizedCategory
       );
       
-      if (matchingBrand && !selectedBrands.includes(normalizeBrandName(matchingBrand))) {
-        console.log('✅ Setting brand filter for:', matchingBrand);
-        setSelectedBrands([normalizeBrandName(matchingBrand)]);
+      if (matchingBrand && !selectedBrands.includes(normalizedCategory)) {
+        setSelectedBrands([normalizedCategory]);
       }
     }
-  }, [urlCategory, products, availableBrands]);
+  }, [urlCategory, availableBrands]);
 
-  // Apply filters whenever any filter changes
-  useEffect(() => {
-    if (!products.length) return;
+  // Filter and sort products - Optimized with useMemo
+  const filteredProducts = useMemo(() => {
+    if (!products.length) return [];
 
     let results = [...products];
 
-    // 1. Apply Search Filter
-    if (searchQuery.trim() !== "") {
+    // Apply search filter
+    if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       results = results.filter(product => {
-        return (
-          product.name?.toLowerCase().includes(query) ||
-          product.brand?.toLowerCase().includes(query) ||
-          product.description?.toLowerCase().includes(query) ||
-          product.model?.toLowerCase().includes(query) ||
-          (product.specs && product.specs.some(spec => 
-            spec.toLowerCase().includes(query)
-          ))
-        );
+        const searchString = [
+          product.name,
+          product.brand,
+          product.description,
+          ...(product.specs || [])
+        ].join(' ').toLowerCase();
+        return searchString.includes(query);
       });
     }
 
-    // 2. Apply Brand Filter
+    // Apply brand filter
     if (selectedBrands.length > 0) {
-      console.log('🔍 Filtering by brands:', selectedBrands);
       results = results.filter(product => 
         selectedBrands.includes(normalizeBrandName(product.brand))
       );
-      console.log('✅ Filtered results count:', results.length);
     }
 
-    // 3. Apply Price Range Filter
+    // Apply price filter
     results = results.filter(product => {
-      const price = extractPrice(product.price);
+      const price = Number(product.price) || 0;
       return price >= priceRange[0] && price <= priceRange[1];
     });
 
-    // 4. Apply Sorting
-    results.sort((a, b) => {
-      const priceA = extractPrice(a.price);
-      const priceB = extractPrice(b.price);
+    // Apply sorting
+    return results.sort((a, b) => {
+      const priceA = Number(a.price) || 0;
+      const priceB = Number(b.price) || 0;
       
       switch(sortBy) {
-        case "price-low":
-          return priceA - priceB;
-        case "price-high":
-          return priceB - priceA;
-        case "name-asc":
-          return (a.name || '').localeCompare(b.name || '');
-        case "name-desc":
-          return (b.name || '').localeCompare(a.name || '');
-        default: // "featured"
-          return 0; // Keep original order
+        case "price-low": return priceA - priceB;
+        case "price-high": return priceB - priceA;
+        case "name-asc": return (a.name || '').localeCompare(b.name || '');
+        case "name-desc": return (b.name || '').localeCompare(a.name || '');
+        default: return 0;
       }
     });
+  }, [products, searchQuery, selectedBrands, priceRange, sortBy]);
 
-    setFilteredProducts(results);
-  }, [searchQuery, selectedBrands, priceRange, sortBy, products]);
-
-  // Handle shop search change
-  const handleShopSearchChange = (value) => {
+  // Memoized handlers
+  const handleShopSearchChange = useCallback((value) => {
     setSearchQuery(value);
     
-    // Update URL without page reload
     const params = new URLSearchParams(location.search);
     if (value.trim()) {
       params.set('search', value.trim());
     } else {
       params.delete('search');
     }
-    
-    // Remove category if search is being used
     params.delete('category');
     
-    // Replace current URL without reloading
     navigate(`?${params.toString()}`, { replace: true });
-  };
+  }, [location.search, navigate]);
 
-  // Handle clear search from shop page
-  const handleClearShopSearch = () => {
+  const handleClearShopSearch = useCallback(() => {
     setSearchQuery("");
-    
-    // Update URL
     const params = new URLSearchParams(location.search);
     params.delete('search');
     navigate(`?${params.toString()}`, { replace: true });
-  };
+  }, [location.search, navigate]);
 
-  // Handle brand selection
-  const toggleBrand = (brand) => {
+  const toggleBrand = useCallback((brand) => {
     const normalizedBrand = normalizeBrandName(brand);
     setSelectedBrands(prev => {
       const newBrands = prev.includes(normalizedBrand) 
         ? prev.filter(b => b !== normalizedBrand) 
         : [...prev, normalizedBrand];
       
-      // Update URL to reflect brand selection
       const params = new URLSearchParams(location.search);
       if (newBrands.length === 1) {
-        // If only one brand selected, update category parameter
         params.set('category', newBrands[0]);
       } else {
-        // If multiple or no brands, remove category parameter
         params.delete('category');
       }
       
       navigate(`?${params.toString()}`, { replace: true });
-      
       return newBrands;
     });
-  };
+  }, [location.search, navigate]);
 
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
-  };
-
-  const showNotification = (message) => {
+  const showNotification = useCallback((message) => {
     setNotification({ message, isVisible: true });
-    setTimeout(() => setNotification({ ...notification, isVisible: false }), 3000);
-  };
+  }, []);
 
-  const handleImageLoad = (productId) => {
-    setImagesLoaded(prev => ({ ...prev, [productId]: true }));
-  };
+  const hideNotification = useCallback(() => {
+    setNotification(prev => ({ ...prev, isVisible: false }));
+  }, []);
 
-  const handleAddToCart = async (product) => {
+  const handleAddToCart = useCallback(async (product) => {
     try {
-      console.log('🛒 Adding product to cart:', product.name);
-      
       const productId = getProductId(product);
       if (!productId) {
-        showNotification('❌ Product ID not found');
+        showNotification('Product ID not found');
         return;
       }
       
       const result = await addToCart(productId, 1);
-      
       if (result.success) {
-        showNotification(`✅ ${product.name} added to cart!`);
+        showNotification(`${product.name} added to cart!`);
       } else {
-        showNotification(result.message || '❌ Failed to add to cart. Please try again.');
+        showNotification(result.message || 'Failed to add to cart');
       }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      showNotification('❌ Failed to add to cart. Please try again.');
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      showNotification('Failed to add to cart');
     }
-  };
+  }, [addToCart, showNotification]);
 
-  const handleProductClick = (productId) => {
+  const handleProductClick = useCallback((productId) => {
     if (productId) {
       navigate(`/laptop/${productId}`);
-    } else {
-      console.error('Cannot navigate: Product ID is undefined');
     }
-  };
+  }, [navigate]);
 
-  const resetAllFilters = () => {
+  const resetAllFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedBrands([]);
     setPriceRange([0, 100000]);
     setSortBy("featured");
-    
-    // Clear URL parameters
-    navigate(`/shop`, { replace: true });
-  };
+    navigate('/shop', { replace: true });
+  }, [navigate]);
 
-  // Active filters count
-  const activeFilterCount = [
-    searchQuery.trim() !== "" ? 1 : 0,
-    selectedBrands.length,
-    priceRange[0] > 0 || priceRange[1] < 100000 ? 1 : 0,
-    sortBy !== "featured" ? 1 : 0
-  ].reduce((a, b) => a + b, 0);
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    localStorage.removeItem('shop_products_cache');
+    setTimeout(() => setLoading(false), 100);
+  }, []);
+
+  // Calculate active filter count
+  const activeFilterCount = useMemo(() => {
+    return [
+      searchQuery.trim() ? 1 : 0,
+      selectedBrands.length,
+      priceRange[0] > 0 || priceRange[1] < 100000 ? 1 : 0,
+      sortBy !== "featured" ? 1 : 0
+    ].reduce((a, b) => a + b, 0);
+  }, [searchQuery, selectedBrands, priceRange, sortBy]);
+
+  // Render loading state
+  if (loading && !products.length) {
+    return (
+      <div className="pt-20 min-h-screen bg-white">
+        <LoadingSpinner size="lg" fullPage />
+      </div>
+    );
+  }
 
   return (
-    <div className="pt-20 min-h-screen bg-white font-roboto">
+    <div className="pt-20 min-h-screen bg-white">
       {/* Notification */}
-      {notification.isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          className="fixed top-24 right-6 bg-[#8f1eae] text-white px-6 py-3 rounded shadow-lg z-50 font-medium text-sm tracking-wide uppercase font-roboto"
-        >
-          {notification.message}
-        </motion.div>
-      )}
+      <Notification
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onHide={hideNotification}
+      />
 
       {/* Quick View Modal */}
       <QuickViewModal
@@ -842,34 +788,25 @@ export default function ShopPage() {
       />
 
       {/* Hero Section */}
-      <section className="bg-white border-b border-gray-300">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-semibold text-gray-900 mb-4 tracking-wide uppercase font-poppins"
-          >
+      <section className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Shop Refurbished Laptops
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-lg max-w-3xl leading-relaxed text-gray-600 font-light font-roboto"
-          >
+          </h1>
+          <p className="text-gray-600 max-w-3xl">
             Discover certified pre-owned laptops from top brands. Each device undergoes rigorous testing 
-            and comes with our quality guarantee for peace of mind.
-          </motion.p>
+            and comes with our quality guarantee.
+          </p>
         </div>
       </section>
 
       {/* Main Content */}
-      <section className="py-8">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-8">
+      <section className="py-6">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col lg:flex-row gap-6">
             
-            {/* Filter Sidebar - Left */}
-            <div className="lg:w-72">
+            {/* Filter Sidebar */}
+            <div className="lg:w-64">
               <FilterSidebar
                 searchQuery={searchQuery}
                 handleShopSearchChange={handleShopSearchChange}
@@ -885,19 +822,19 @@ export default function ShopPage() {
               />
             </div>
 
-            {/* Products Grid - Right */}
+            {/* Products Grid */}
             <div className="flex-1">
               {/* Results Header */}
-              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 p-6 border border-gray-300 bg-white rounded-lg">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 p-4 bg-white rounded-lg border border-gray-200">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2 tracking-wide uppercase font-poppins">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">
                     {urlCategory 
                       ? `${selectedBrands.map(b => b.charAt(0).toUpperCase() + b.slice(1)).join(', ')} Laptops`
                       : searchQuery 
                         ? `Search: "${searchQuery}"` 
                         : 'All Products'}
                   </h2>
-                  <p className="text-gray-600 text-sm font-light font-roboto">
+                  <p className="text-gray-600 text-sm">
                     {loading 
                       ? "Loading products..." 
                       : error 
@@ -907,35 +844,30 @@ export default function ShopPage() {
                   </p>
                 </div>
                 
-                <div className="flex items-center gap-4">
-                  {/* Active Filters Badge */}
-                  {activeFilterCount > 0 && (
-                    <div className="px-3 py-1 bg-[#F5F2FA] text-[#8f1eae] text-xs rounded-full font-medium font-roboto">
+                {activeFilterCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-[#F5F2FA] text-[#8f1eae] text-xs rounded-full font-medium">
                       {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
-                    </div>
-                  )}
-                  
-                  {/* Clear Filters Button */}
-                  {activeFilterCount > 0 && (
+                    </span>
                     <button
                       onClick={resetAllFilters}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded text-sm font-medium tracking-wide uppercase transition-all duration-300 hover:border-[#8f1eae] hover:text-[#8f1eae] font-roboto"
+                      className="px-3 py-1 border border-gray-300 text-gray-700 rounded text-sm hover:border-[#8f1eae] hover:text-[#8f1eae] transition-colors"
                     >
                       Clear All
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Active Filters Display */}
-              {(selectedBrands.length > 0 || priceRange[0] > 0 || priceRange[1] < 100000) && (
-                <div className="mb-6 p-4 bg-gray-100 rounded-lg border border-gray-300">
+              {activeFilterCount > 0 && (
+                <div className="mb-6 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex flex-wrap gap-2">
                     {/* Selected Brands */}
                     {selectedBrands.map(brand => (
-                      <div key={brand} className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-300">
-                        <span className="text-sm text-gray-700 font-light font-roboto">
-                          Brand: {brand.charAt(0).toUpperCase() + brand.slice(1)}
+                      <div key={brand} className="inline-flex items-center gap-1 bg-white px-2 py-1 rounded-full border border-gray-200">
+                        <span className="text-sm text-gray-700">
+                          {brand.charAt(0).toUpperCase() + brand.slice(1)}
                         </span>
                         <button
                           onClick={() => {
@@ -944,7 +876,7 @@ export default function ShopPage() {
                             );
                             if (matchingBrand) toggleBrand(matchingBrand);
                           }}
-                          className="text-gray-400 hover:text-gray-600 text-sm"
+                          className="text-gray-400 hover:text-gray-600 ml-1"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -953,30 +885,13 @@ export default function ShopPage() {
                     
                     {/* Price Range */}
                     {(priceRange[0] > 0 || priceRange[1] < 100000) && (
-                      <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-300">
-                        <span className="text-sm text-gray-700 font-light font-roboto">
+                      <div className="inline-flex items-center gap-1 bg-white px-2 py-1 rounded-full border border-gray-200">
+                        <span className="text-sm text-gray-700">
                           Price: ₹{priceRange[0].toLocaleString()} - ₹{priceRange[1].toLocaleString()}
                         </span>
                         <button
                           onClick={() => setPriceRange([0, 100000])}
-                          className="text-gray-400 hover:text-gray-600 text-sm"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )}
-                    
-                    {/* Sort Order */}
-                    {sortBy !== "featured" && (
-                      <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-300">
-                        <span className="text-sm text-gray-700 font-light font-roboto">
-                          Sort: {sortBy === "price-low" ? "Price: Low to High" : 
-                                 sortBy === "price-high" ? "Price: High to Low" :
-                                 sortBy === "name-asc" ? "Name: A to Z" : "Name: Z to A"}
-                        </span>
-                        <button
-                          onClick={() => setSortBy("featured")}
-                          className="text-gray-400 hover:text-gray-600 text-sm"
+                          className="text-gray-400 hover:text-gray-600 ml-1"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -986,45 +901,41 @@ export default function ShopPage() {
                 </div>
               )}
 
+              {/* Products Display */}
               {error ? (
                 <ErrorState error={error} onRetry={handleRetry} />
               ) : loading ? (
-                <div className="text-center py-16 bg-white rounded-lg border border-gray-300 p-8">
-                  <div className="flex justify-center items-center space-x-3">
-                    <div className="w-6 h-6 border-2 border-gray-300 border-t-[#8f1eae] rounded-full animate-spin"></div>
-                    <span className="text-gray-600 text-sm font-light font-roboto">Loading products...</span>
-                  </div>
+                <div className="flex justify-center items-center py-12">
+                  <LoadingSpinner size="lg" />
                 </div>
               ) : filteredProducts.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-lg border border-gray-300 p-8">
-                  <div className="text-4xl mb-4 text-gray-300">
+                <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                  <div className="text-3xl mb-4 text-gray-300">
                     {searchQuery ? "🔍" : "📦"}
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 uppercase tracking-wide font-poppins">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     {searchQuery ? 'No products found' : 'No products available'}
                   </h3>
-                  <p className="text-gray-600 mb-6 max-w-md mx-auto text-sm font-light font-roboto">
+                  <p className="text-gray-600 mb-4 max-w-md mx-auto text-sm">
                     {searchQuery 
-                      ? `We couldn't find any products matching "${searchQuery}". Try adjusting your search terms or filters.`
-                      : "We couldn't find any products at the moment. Please check back later."}
+                      ? `We couldn't find any products matching "${searchQuery}".`
+                      : "We couldn't find any products at the moment."}
                   </p>
                   {activeFilterCount > 0 && (
                     <button
                       onClick={resetAllFilters}
-                      className="bg-[#8f1eae] text-white px-6 py-3 rounded text-sm font-medium tracking-wide uppercase transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] font-roboto"
+                      className="bg-[#8f1eae] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#7a1a99] transition-colors"
                     >
                       Clear All Filters
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {filteredProducts.map((product) => (
                     <ProductCard
                       key={getProductId(product) || product.name}
                       product={product}
-                      imagesLoaded={imagesLoaded}
-                      handleImageLoad={handleImageLoad}
                       handleProductClick={handleProductClick}
                       setSelectedProduct={setSelectedProduct}
                       handleAddToCart={handleAddToCart}
