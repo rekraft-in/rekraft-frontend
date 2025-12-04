@@ -29,24 +29,24 @@ const LoadingSpinner = ({ size = "md", fullPage = false }) => {
 const ErrorState = ({ error, onRetry }) => (
   <div className="text-center py-16 bg-white rounded-lg border border-gray-200 p-8">
     <div className="text-4xl mb-4 text-gray-400">⚠️</div>
-    <h3 className="text-xl font-semibold text-gray-900 mb-3 uppercase tracking-wide">
-      Unable to Load Products
+    <h3 className="text-xl font-poppins font-semibold text-gray-900 mb-3 uppercase tracking-wider">
+      UNABLE TO LOAD PRODUCTS
     </h3>
-    <p className="text-gray-600 mb-4 max-w-md mx-auto text-sm">
+    <p className="text-gray-600 mb-6 max-w-md mx-auto text-base font-roboto font-light">
       {error || "We're having trouble loading our products. Please check your connection and try again."}
     </p>
     <div className="flex flex-col sm:flex-row gap-3 justify-center">
       <button
         onClick={onRetry}
-        className="bg-[#8f1eae] text-white px-6 py-3 rounded font-medium text-sm tracking-wide uppercase transition-colors hover:bg-[#7a1a99]"
+        className="bg-[#8f1eae] text-white px-6 py-3 rounded font-poppins font-medium text-sm tracking-wider uppercase transition-colors hover:bg-[#7a1a99]"
       >
-        Try Again
+        TRY AGAIN
       </button>
       <button
         onClick={() => window.location.reload()}
-        className="border border-gray-900 text-gray-900 px-6 py-3 rounded font-medium text-sm tracking-wide uppercase transition-colors hover:bg-black hover:text-white"
+        className="border border-gray-900 text-gray-900 px-6 py-3 rounded font-poppins font-medium text-sm tracking-wider uppercase transition-colors hover:bg-black hover:text-white"
       >
-        Reload Page
+        RELOAD PAGE
       </button>
     </div>
   </div>
@@ -101,9 +101,9 @@ const QuickViewModal = React.memo(({ product, isOpen, onClose, onAddToCart }) =>
           className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-200"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6">
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="p-8">
+            <div className="flex justify-between items-start mb-8">
+              <h2 className="text-2xl font-poppins font-semibold text-gray-900">
                 {product.name}
               </h2>
               <button 
@@ -114,8 +114,8 @@ const QuickViewModal = React.memo(({ product, isOpen, onClose, onAddToCart }) =>
               </button>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-gray-50 rounded-lg p-6 flex items-center justify-center">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="bg-gray-50 rounded-lg p-8 flex items-center justify-center">
                 <img 
                   src={product.image || '/images/placeholder-laptop.png'}
                   alt={product.name}
@@ -127,48 +127,48 @@ const QuickViewModal = React.memo(({ product, isOpen, onClose, onAddToCart }) =>
                 />
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-gray-900">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl font-poppins font-bold text-gray-900">
                     {formatPrice(product.price)}
                   </span>
                   {discount > 0 && (
                     <>
-                      <span className="text-base text-gray-500 line-through">
+                      <span className="text-base text-gray-500 line-through font-roboto">
                         {formatPrice(product.originalPrice)}
                       </span>
-                      <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
-                        Save {discount}%
+                      <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-poppins font-medium uppercase tracking-wide">
+                        SAVE {discount}%
                       </span>
                     </>
                   )}
                 </div>
                 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <strong className="text-gray-700 text-sm font-medium">Condition:</strong>
-                    <span className="bg-[#F5F2FA] text-[#8f1eae] px-2 py-1 text-xs rounded-full font-medium">
-                      {product.condition || 'Refurbished'}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <strong className="text-gray-700 text-sm font-poppins font-medium uppercase tracking-wide">CONDITION:</strong>
+                    <span className="bg-[#F5F2FA] text-[#8f1eae] px-3 py-1 text-xs rounded-full font-poppins font-medium uppercase tracking-wide">
+                      {product.condition || 'REFURBISHED'}
                     </span>
                   </div>
                   
                   <div className="text-sm">
-                    <strong className="text-gray-700 font-medium">Warranty:</strong>
-                    <span className="text-gray-600 ml-2">{product.warranty || '1 Year'}</span>
+                    <strong className="text-gray-700 font-poppins font-medium uppercase tracking-wide">WARRANTY:</strong>
+                    <span className="text-gray-600 ml-3 font-roboto font-light">{product.warranty || '1 YEAR'}</span>
                   </div>
                   
                   <div className="text-sm">
-                    <strong className="text-gray-700 font-medium">Brand:</strong>
-                    <span className="text-gray-600 ml-2">{product.brand || 'Unknown'}</span>
+                    <strong className="text-gray-700 font-poppins font-medium uppercase tracking-wide">BRAND:</strong>
+                    <span className="text-gray-600 ml-3 font-roboto font-light">{product.brand || 'UNKNOWN'}</span>
                   </div>
                 </div>
                 
                 {product.specs && product.specs.length > 0 && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2 text-sm">Key Specifications</h3>
-                    <ul className="space-y-1">
+                    <h3 className="font-poppins font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wide">KEY SPECIFICATIONS</h3>
+                    <ul className="space-y-3">
                       {product.specs.slice(0, 3).map((spec, index) => (
-                        <li key={index} className="flex items-start gap-2 text-gray-600 text-sm">
+                        <li key={index} className="flex items-start gap-3 text-gray-600 text-sm font-roboto font-light">
                           <span className="w-1 h-1 bg-[#8f1eae] rounded-full mt-2 flex-shrink-0"></span>
                           <span>{spec}</span>
                         </li>
@@ -177,26 +177,26 @@ const QuickViewModal = React.memo(({ product, isOpen, onClose, onAddToCart }) =>
                   </div>
                 )}
                 
-                <div className="space-y-2 pt-4">
+                <div className="space-y-3 pt-6">
                   <button
                     onClick={() => {
                       onClose();
                       const productId = getProductId(product);
                       if (productId) navigate(`/laptop/${productId}`);
                     }}
-                    className="w-full bg-[#8f1eae] text-white py-3 rounded font-medium text-sm hover:bg-[#7a1a99] transition-colors"
+                    className="w-full bg-[#8f1eae] text-white py-4 rounded font-poppins font-medium text-sm uppercase tracking-wider hover:bg-[#7a1a99] transition-colors"
                   >
-                    View Full Details
+                    VIEW FULL DETAILS
                   </button>
                   <button 
                     onClick={() => {
                       onAddToCart(product);
                       onClose();
                     }}
-                    className="w-full bg-green-600 text-white py-3 rounded font-medium text-sm hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-green-600 text-white py-4 rounded font-poppins font-medium text-sm uppercase tracking-wider hover:bg-green-700 transition-colors flex items-center justify-center gap-3"
                   >
                     <ShoppingCart className="w-4 h-4" />
-                    Add to Cart
+                    ADD TO CART
                   </button>
                 </div>
               </div>
@@ -227,23 +227,23 @@ const FilterSidebar = React.memo(({
   return (
     <>
       {/* Mobile Filter Toggle */}
-      <div className="lg:hidden mb-4">
+      <div className="lg:hidden mb-6">
         <button
           onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:border-[#8f1eae] hover:text-[#8f1eae] transition-colors"
+          className="w-full flex items-center justify-center gap-3 py-4 px-6 border border-gray-300 text-gray-700 rounded font-poppins font-medium text-sm uppercase tracking-wider hover:border-[#8f1eae] hover:text-[#8f1eae] transition-colors"
         >
           <Filter className="w-4 h-4" />
-          {isMobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
+          {isMobileFiltersOpen ? 'HIDE FILTERS' : 'SHOW FILTERS'}
         </button>
       </div>
 
       {/* Filter Sidebar */}
-      <div className={`${isMobileFiltersOpen ? 'block' : 'hidden lg:block'} space-y-4`}>
+      <div className={`${isMobileFiltersOpen ? 'block' : 'hidden lg:block'} space-y-6`}>
         {/* Search Filter */}
-        <div className="p-4 border border-gray-200 bg-white rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
+        <div className="p-6 border border-gray-200 bg-white rounded-lg">
+          <h3 className="font-poppins font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wider flex items-center gap-3">
             <Search className="w-4 h-4" />
-            Search Products
+            SEARCH PRODUCTS
           </h3>
           <div className="relative">
             <input
@@ -251,12 +251,12 @@ const FilterSidebar = React.memo(({
               placeholder="Search by name, brand, specs..."
               value={searchQuery}
               onChange={(e) => handleShopSearchChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] placeholder-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 rounded text-sm font-roboto focus:outline-none focus:border-[#8f1eae] placeholder-gray-400"
             />
             {searchQuery && (
               <button
                 onClick={handleClearShopSearch}
-                className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -265,11 +265,11 @@ const FilterSidebar = React.memo(({
         </div>
 
         {/* Brand Filter */}
-        <div className="p-4 border border-gray-200 bg-white rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-3 text-sm">Filter by Brand</h3>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+        <div className="p-6 border border-gray-200 bg-white rounded-lg">
+          <h3 className="font-poppins font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wider">FILTER BY BRAND</h3>
+          <div className="space-y-3 max-h-48 overflow-y-auto">
             {availableBrands.map(brand => (
-              <div key={brand} className="flex items-center gap-2">
+              <div key={brand} className="flex items-center gap-3">
                 <input
                   type="checkbox"
                   id={`brand-${brand}`}
@@ -279,7 +279,7 @@ const FilterSidebar = React.memo(({
                 />
                 <label 
                   htmlFor={`brand-${brand}`}
-                  className="text-sm text-gray-700 cursor-pointer hover:text-[#8f1eae] transition-colors"
+                  className="text-sm text-gray-700 font-roboto font-light cursor-pointer hover:text-[#8f1eae] transition-colors"
                 >
                   {brand}
                 </label>
@@ -289,30 +289,30 @@ const FilterSidebar = React.memo(({
         </div>
 
         {/* Price Range Filter */}
-        <div className="p-4 border border-gray-200 bg-white rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-3 text-sm">Price Range</h3>
-          <div className="space-y-3">
-            <div className="flex gap-2">
+        <div className="p-6 border border-gray-200 bg-white rounded-lg">
+          <h3 className="font-poppins font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wider">PRICE RANGE</h3>
+          <div className="space-y-4">
+            <div className="flex gap-4">
               <div className="flex-1">
-                <label className="text-xs mb-1 block text-gray-600">Min Price (₹)</label>
+                <label className="text-xs mb-2 block text-gray-600 font-poppins font-medium uppercase tracking-wide">MIN PRICE (₹)</label>
                 <input
                   type="number"
                   min="0"
                   max="1000000"
                   value={priceRange[0]}
                   onChange={(e) => setPriceRange([Number(e.target.value) || 0, priceRange[1]])}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-roboto focus:outline-none focus:border-[#8f1eae]"
                 />
               </div>
               <div className="flex-1">
-                <label className="text-xs mb-1 block text-gray-600">Max Price (₹)</label>
+                <label className="text-xs mb-2 block text-gray-600 font-poppins font-medium uppercase tracking-wide">MAX PRICE (₹)</label>
                 <input
                   type="number"
                   min="0"
                   max="1000000"
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value) || 100000])}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-roboto focus:outline-none focus:border-[#8f1eae]"
                 />
               </div>
             </div>
@@ -320,39 +320,39 @@ const FilterSidebar = React.memo(({
         </div>
 
         {/* Sort Filter */}
-        <div className="p-4 border border-gray-200 bg-white rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
+        <div className="p-6 border border-gray-200 bg-white rounded-lg">
+          <h3 className="font-poppins font-semibold text-gray-900 mb-4 text-sm uppercase tracking-wider flex items-center gap-3">
             <ChevronDown className="w-4 h-4" />
-            Sort By
+            SORT BY
           </h3>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] bg-white"
+            className="w-full px-4 py-3 border border-gray-300 rounded text-sm font-roboto focus:outline-none focus:border-[#8f1eae] bg-white"
           >
-            <option value="featured">Featured</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="name-asc">Name: A to Z</option>
-            <option value="name-desc">Name: Z to A</option>
+            <option value="featured">FEATURED</option>
+            <option value="price-low">PRICE: LOW TO HIGH</option>
+            <option value="price-high">PRICE: HIGH TO LOW</option>
+            <option value="name-asc">NAME: A TO Z</option>
+            <option value="name-desc">NAME: Z TO A</option>
           </select>
         </div>
 
         {/* Reset Filters Button */}
         <button
           onClick={resetAllFilters}
-          className="w-full py-2 border border-gray-900 text-gray-900 rounded text-sm font-medium hover:bg-black hover:text-white transition-colors"
+          className="w-full py-4 border border-gray-900 text-gray-900 rounded font-poppins font-medium text-sm uppercase tracking-wider hover:bg-black hover:text-white transition-colors"
         >
-          Reset All Filters
+          RESET ALL FILTERS
         </button>
 
         {/* Mobile Filter Close Button */}
         {isMobileFiltersOpen && (
           <button
             onClick={() => setIsMobileFiltersOpen(false)}
-            className="w-full py-2 bg-[#8f1eae] text-white rounded text-sm font-medium hover:bg-[#7a1a99] transition-colors lg:hidden"
+            className="w-full py-4 bg-[#8f1eae] text-white rounded font-poppins font-medium text-sm uppercase tracking-wider hover:bg-[#7a1a99] transition-colors lg:hidden"
           >
-            Apply Filters
+            APPLY FILTERS
           </button>
         )}
       </div>
@@ -392,7 +392,7 @@ const ProductCard = React.memo(({
         <img
           src={product.image || '/images/placeholder-laptop.png'}
           alt={product.name}
-          className={`w-full h-full object-contain p-4 transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`w-full h-full object-contain p-8 transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
@@ -402,43 +402,43 @@ const ProductCard = React.memo(({
         />
         
         {/* Condition Badge */}
-        <div className="absolute top-3 left-3 bg-[#8f1eae] text-white px-2 py-1 text-xs rounded-full font-medium">
-          {product.condition || 'Refurbished'}
+        <div className="absolute top-4 left-4 bg-[#8f1eae] text-white px-3 py-1 text-xs rounded-full font-poppins font-medium uppercase tracking-wide">
+          {product.condition || 'REFURBISHED'}
         </div>
 
         {/* Discount Badge */}
         {discount > 0 && (
-          <div className="absolute top-3 right-3 bg-green-100 text-green-700 px-2 py-1 text-xs rounded-full font-medium">
-            Save {discount}%
+          <div className="absolute top-4 right-4 bg-green-100 text-green-700 px-3 py-1 text-xs rounded-full font-poppins font-medium uppercase tracking-wide">
+            SAVE {discount}%
           </div>
         )}
       </div>
 
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">
-            {product.name || 'Unnamed Product'}
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="font-poppins font-semibold text-gray-900 text-base leading-tight line-clamp-2">
+            {product.name || 'UNNAMED PRODUCT'}
           </h3>
-          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 ml-2 flex-shrink-0">
-            {product.brand || 'Unknown'}
+          <span className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-600 ml-3 flex-shrink-0 font-poppins font-medium">
+            {product.brand || 'UNKNOWN'}
           </span>
         </div>
         
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg font-bold text-gray-900">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-2xl font-poppins font-bold text-gray-900">
             {formatPrice(product.price)}
           </span>
           {discount > 0 && (
-            <span className="text-gray-500 text-sm line-through">
+            <span className="text-gray-500 text-sm line-through font-roboto">
               {formatPrice(product.originalPrice)}
             </span>
           )}
         </div>
         
         {product.specs && product.specs.length > 0 && (
-          <div className="text-sm text-gray-600 mb-4 space-y-1">
+          <div className="text-sm text-gray-600 mb-6 space-y-3 font-roboto font-light">
             {product.specs.slice(0, 2).map((spec, index) => (
-              <div key={index} className="flex items-start gap-2">
+              <div key={index} className="flex items-start gap-3">
                 <span className="w-1 h-1 rounded-full bg-[#8f1eae] mt-2 flex-shrink-0"></span>
                 <span className="line-clamp-1">{spec}</span>
               </div>
@@ -446,15 +446,15 @@ const ProductCard = React.memo(({
           </div>
         )}
         
-        <div className="space-y-2">
+        <div className="space-y-3">
           <button 
             onClick={(e) => {
               e.stopPropagation();
               setSelectedProduct(product);
             }}
-            className="w-full border border-gray-900 text-gray-900 py-2 text-sm font-medium rounded hover:bg-black hover:text-white transition-colors"
+            className="w-full border border-gray-900 text-gray-900 py-3 text-sm font-poppins font-medium uppercase tracking-wider rounded hover:bg-black hover:text-white transition-colors"
           >
-            Quick View
+            QUICK VIEW
           </button>
           
           <button 
@@ -462,10 +462,10 @@ const ProductCard = React.memo(({
               e.stopPropagation();
               handleAddToCart(product);
             }}
-            className="w-full bg-[#8f1eae] text-white py-2 text-sm font-medium rounded hover:bg-[#7a1a99] transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-[#8f1eae] text-white py-3 text-sm font-poppins font-medium uppercase tracking-wider rounded hover:bg-[#7a1a99] transition-colors flex items-center justify-center gap-3"
           >
             <ShoppingCart className="w-4 h-4" />
-            Add to Cart
+            ADD TO CART
           </button>
         </div>
       </div>
@@ -489,10 +489,10 @@ const Notification = React.memo(({ message, isVisible, onHide }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="fixed top-24 right-4 bg-[#8f1eae] text-white px-4 py-3 rounded shadow-lg z-50 max-w-xs"
+      className="fixed top-24 right-4 bg-[#8f1eae] text-white px-6 py-4 rounded shadow-lg z-50 max-w-xs"
     >
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">{message}</span>
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-poppins font-medium uppercase tracking-wide">{message}</span>
       </div>
     </motion.div>
   );
@@ -714,19 +714,19 @@ export default function ShopPage() {
     try {
       const productId = getProductId(product);
       if (!productId) {
-        showNotification('Product ID not found');
+        showNotification('PRODUCT ID NOT FOUND');
         return;
       }
       
       const result = await addToCart(productId, 1);
       if (result.success) {
-        showNotification(`${product.name} added to cart!`);
+        showNotification(`${product.name} ADDED TO CART!`);
       } else {
-        showNotification(result.message || 'Failed to add to cart');
+        showNotification(result.message || 'FAILED TO ADD TO CART');
       }
     } catch (err) {
       console.error('Error adding to cart:', err);
-      showNotification('Failed to add to cart');
+      showNotification('FAILED TO ADD TO CART');
     }
   }, [addToCart, showNotification]);
 
@@ -789,11 +789,11 @@ export default function ShopPage() {
 
       {/* Hero Section */}
       <section className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Shop Refurbished Laptops
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <h1 className="text-4xl font-poppins font-bold text-gray-900 mb-4">
+            SHOP REFURBISHED LAPTOPS
           </h1>
-          <p className="text-gray-600 max-w-3xl">
+          <p className="text-gray-600 max-w-3xl text-base font-roboto font-light">
             Discover certified pre-owned laptops from top brands. Each device undergoes rigorous testing 
             and comes with our quality guarantee.
           </p>
@@ -801,12 +801,12 @@ export default function ShopPage() {
       </section>
 
       {/* Main Content */}
-      <section className="py-6">
+      <section className="py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-8">
             
             {/* Filter Sidebar */}
-            <div className="lg:w-64">
+            <div className="lg:w-72">
               <FilterSidebar
                 searchQuery={searchQuery}
                 handleShopSearchChange={handleShopSearchChange}
@@ -825,35 +825,35 @@ export default function ShopPage() {
             {/* Products Grid */}
             <div className="flex-1">
               {/* Results Header */}
-              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 p-4 bg-white rounded-lg border border-gray-200">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 p-6 bg-white rounded-lg border border-gray-200">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                  <h2 className="text-xl font-poppins font-semibold text-gray-900 mb-2 uppercase tracking-wider">
                     {urlCategory 
-                      ? `${selectedBrands.map(b => b.charAt(0).toUpperCase() + b.slice(1)).join(', ')} Laptops`
+                      ? `${selectedBrands.map(b => b.charAt(0).toUpperCase() + b.slice(1)).join(', ')} LAPTOPS`
                       : searchQuery 
-                        ? `Search: "${searchQuery}"` 
-                        : 'All Products'}
+                        ? `SEARCH: "${searchQuery}"` 
+                        : 'ALL PRODUCTS'}
                   </h2>
-                  <p className="text-gray-600 text-sm">
+                  <p className="text-gray-600 text-sm font-roboto font-light">
                     {loading 
-                      ? "Loading products..." 
+                      ? "LOADING PRODUCTS..." 
                       : error 
-                      ? "Error loading products" 
-                      : `Showing ${filteredProducts.length} of ${products.length} products`
+                      ? "ERROR LOADING PRODUCTS" 
+                      : `SHOWING ${filteredProducts.length} OF ${products.length} PRODUCTS`
                     }
                   </p>
                 </div>
                 
                 {activeFilterCount > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-[#F5F2FA] text-[#8f1eae] text-xs rounded-full font-medium">
-                      {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-[#F5F2FA] text-[#8f1eae] text-xs rounded-full font-poppins font-medium uppercase tracking-wide">
+                      {activeFilterCount} FILTER{activeFilterCount !== 1 ? 'S' : ''} ACTIVE
                     </span>
                     <button
                       onClick={resetAllFilters}
-                      className="px-3 py-1 border border-gray-300 text-gray-700 rounded text-sm hover:border-[#8f1eae] hover:text-[#8f1eae] transition-colors"
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded text-sm font-poppins font-medium uppercase tracking-wide hover:border-[#8f1eae] hover:text-[#8f1eae] transition-colors"
                     >
-                      Clear All
+                      CLEAR ALL
                     </button>
                   </div>
                 )}
@@ -861,12 +861,12 @@ export default function ShopPage() {
 
               {/* Active Filters Display */}
               {activeFilterCount > 0 && (
-                <div className="mb-6 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex flex-wrap gap-2">
+                <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex flex-wrap gap-3">
                     {/* Selected Brands */}
                     {selectedBrands.map(brand => (
-                      <div key={brand} className="inline-flex items-center gap-1 bg-white px-2 py-1 rounded-full border border-gray-200">
-                        <span className="text-sm text-gray-700">
+                      <div key={brand} className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-200">
+                        <span className="text-sm text-gray-700 font-roboto font-light">
                           {brand.charAt(0).toUpperCase() + brand.slice(1)}
                         </span>
                         <button
@@ -885,9 +885,9 @@ export default function ShopPage() {
                     
                     {/* Price Range */}
                     {(priceRange[0] > 0 || priceRange[1] < 100000) && (
-                      <div className="inline-flex items-center gap-1 bg-white px-2 py-1 rounded-full border border-gray-200">
-                        <span className="text-sm text-gray-700">
-                          Price: ₹{priceRange[0].toLocaleString()} - ₹{priceRange[1].toLocaleString()}
+                      <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-200">
+                        <span className="text-sm text-gray-700 font-roboto font-light">
+                          PRICE: ₹{priceRange[0].toLocaleString()} - ₹{priceRange[1].toLocaleString()}
                         </span>
                         <button
                           onClick={() => setPriceRange([0, 100000])}
@@ -905,33 +905,33 @@ export default function ShopPage() {
               {error ? (
                 <ErrorState error={error} onRetry={handleRetry} />
               ) : loading ? (
-                <div className="flex justify-center items-center py-12">
+                <div className="flex justify-center items-center py-16">
                   <LoadingSpinner size="lg" />
                 </div>
               ) : filteredProducts.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                  <div className="text-3xl mb-4 text-gray-300">
+                <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
+                  <div className="text-4xl mb-6 text-gray-300">
                     {searchQuery ? "🔍" : "📦"}
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {searchQuery ? 'No products found' : 'No products available'}
+                  <h3 className="text-xl font-poppins font-semibold text-gray-900 mb-4 uppercase tracking-wider">
+                    {searchQuery ? 'NO PRODUCTS FOUND' : 'NO PRODUCTS AVAILABLE'}
                   </h3>
-                  <p className="text-gray-600 mb-4 max-w-md mx-auto text-sm">
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto text-base font-roboto font-light">
                     {searchQuery 
-                      ? `We couldn't find any products matching "${searchQuery}".`
-                      : "We couldn't find any products at the moment."}
+                      ? `WE COULDN'T FIND ANY PRODUCTS MATCHING "${searchQuery}".`
+                      : "WE COULDN'T FIND ANY PRODUCTS AT THE MOMENT."}
                   </p>
                   {activeFilterCount > 0 && (
                     <button
                       onClick={resetAllFilters}
-                      className="bg-[#8f1eae] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#7a1a99] transition-colors"
+                      className="bg-[#8f1eae] text-white px-6 py-3 rounded font-poppins font-medium text-sm uppercase tracking-wider hover:bg-[#7a1a99] transition-colors"
                     >
-                      Clear All Filters
+                      CLEAR ALL FILTERS
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredProducts.map((product) => (
                     <ProductCard
                       key={getProductId(product) || product.name}
