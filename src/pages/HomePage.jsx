@@ -36,6 +36,11 @@ import {
   CreditCard
 } from 'lucide-react';
 
+// Helper function to get product ID (handles both id and _id)
+const getProductId = (product) => {
+  return product.id || product._id;
+};
+
 // Color constants for consistency
 const COLORS = {
   white: '#FFFFFF',
@@ -56,18 +61,41 @@ const LoadingSpinner = () => (
 
 // Quick View Modal Component
 const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
+  const navigate = useNavigate();
+  
   if (!isOpen || !product) return null;
 
   const calculateDiscount = (originalPrice, currentPrice) => {
     try {
-      const original = parseInt(originalPrice?.replace(/[^0-9]/g, '') || '0');
-      const current = parseInt(currentPrice?.replace(/[^0-9]/g, '') || '0');
+      const original = typeof originalPrice === 'number' 
+        ? originalPrice 
+        : typeof originalPrice === 'string' 
+          ? parseInt(originalPrice.replace(/[^0-9]/g, '') || '0')
+          : 0;
+      
+      const current = typeof currentPrice === 'number'
+        ? currentPrice
+        : typeof currentPrice === 'string'
+          ? parseInt(currentPrice.replace(/[^0-9]/g, '') || '0')
+          : 0;
+      
       if (original <= current || original === 0) return "0%";
       const discount = ((original - current) / original) * 100;
       return `${Math.round(discount)}%`;
     } catch {
       return "0%";
     }
+  };
+
+  // Format price for display
+  const formatPrice = (priceValue) => {
+    if (typeof priceValue === 'number') {
+      return `₹${priceValue.toLocaleString()}`;
+    } else if (typeof priceValue === 'string') {
+      const num = parseInt(priceValue.replace(/[^0-9]/g, '') || '0');
+      return `₹${num.toLocaleString()}`;
+    }
+    return '₹0';
   };
 
   return (
@@ -96,61 +124,81 @@ const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-gray-50 rounded p-8 flex items-center justify-center border border-gray-300">
               <img 
-                src={product.image} 
-                alt={product.name} 
-                className="w-full h-64 object-contain transform hover:scale-105 transition-transform duration-300" 
+                src={product.image}
+                alt={product.name}
+                className="w-full h-64 object-contain transform hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  e.target.src = '/images/placeholder-laptop.png';
+                  e.target.onerror = null;
+                }}
               />
             </div>
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <span className="text-2xl font-semibold text-gray-900 font-poppins">{product.price}</span>
-                <span className="text-base text-gray-600 line-through font-light font-roboto">{product.originalPrice}</span>
-                <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium font-inter">
-                  Save {calculateDiscount(product.originalPrice, product.price)}
-                </span>
+                <span className="text-2xl font-semibold text-gray-900 font-poppins">{formatPrice(product.price)}</span>
+                {product.originalPrice && (
+                  <>
+                    <span className="text-base text-gray-600 line-through font-light font-roboto">{formatPrice(product.originalPrice)}</span>
+                    <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium font-inter">
+                      Save {calculateDiscount(product.originalPrice, product.price)}
+                    </span>
+                  </>
+                )}
               </div>
               
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <strong className="text-gray-700 text-sm font-medium uppercase tracking-wide font-inter">Condition:</strong>
                   <span className="bg-[#F5F2FA] text-[#8f1eae] px-2 py-1 text-xs rounded-full font-medium font-inter">
-                    {product.condition}
+                    {product.condition || 'Refurbished'}
                   </span>
                 </div>
                 <div className="text-sm">
                   <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">Warranty:</strong> 
-                  <span className="text-gray-600 font-light ml-2 font-roboto">{product.warranty}</span>
+                  <span className="text-gray-600 font-light ml-2 font-roboto">{product.warranty || '1 Year Warranty'}</span>
                 </div>
                 <div className="text-sm">
                   <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">Brand:</strong> 
-                  <span className="text-gray-600 font-light ml-2 font-roboto">{product.brand}</span>
+                  <span className="text-gray-600 font-light ml-2 font-roboto">{product.brand || 'Unknown'}</span>
                 </div>
-                <div className="text-sm">
-                  <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">Category:</strong> 
-                  <span className="text-gray-600 font-light ml-2 capitalize font-roboto">{product.category}</span>
-                </div>
+                {product.category && (
+                  <div className="text-sm">
+                    <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">Category:</strong> 
+                    <span className="text-gray-600 font-light ml-2 capitalize font-roboto">{product.category}</span>
+                  </div>
+                )}
               </div>
               
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3 text-sm uppercase tracking-wide font-inter">Key Specifications</h3>
-                <ul className="space-y-2">
-                  {product.specs && product.specs.slice(0, 4).map((spec, index) => (
-                    <li key={index} className="flex items-center gap-2 text-gray-600 text-sm font-light font-roboto">
-                      <div className="w-1 h-1 bg-[#8f1eae] rounded-full flex-shrink-0"></div>
-                      {spec}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {product.specs && product.specs.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3 text-sm uppercase tracking-wide font-inter">Key Specifications</h3>
+                  <ul className="space-y-2">
+                    {product.specs.slice(0, 4).map((spec, index) => (
+                      <li key={index} className="flex items-center gap-2 text-gray-600 text-sm font-light font-roboto">
+                        <div className="w-1 h-1 bg-[#8f1eae] rounded-full flex-shrink-0"></div>
+                        {spec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               
               <div className="space-y-3 pt-4">
-                <Link 
-                  to={`/laptop/${product.id}`}
+                <button
+                  onClick={() => {
+                    onClose();
+                    const productId = getProductId(product);
+                    if (productId) {
+                      navigate(`/laptop/${productId}`);
+                    } else {
+                      console.error('Product has no ID:', product);
+                    }
+                  }}
                   className="block w-full text-center text-white py-3 font-medium text-sm tracking-wide uppercase transition-all duration-300 border border-transparent hover:bg-[#7a1a95] rounded font-inter"
                   style={{ backgroundColor: '#8f1eae' }}
                 >
                   View Full Details
-                </Link>
+                </button>
                 <button 
                   onClick={() => {
                     onAddToCart(product);
@@ -396,6 +444,7 @@ const BrandsSection = () => {
                   className="max-h-full max-w-full object-contain opacity-70 group-hover:opacity-100 transition-opacity duration-300"
                   onError={(e) => {
                     console.error(`Failed to load logo for ${brand.name}`);
+                    e.target.src = '/images/placeholder-laptop.png';
                   }}
                 />
               </div>
@@ -573,8 +622,18 @@ export default function HomePage() {
         console.log('🔄 Fetching featured products from backend...');
         
         const productsData = await apiService.getProducts();
-        const products = Array.isArray(productsData) ? productsData : 
-                         productsData?.data || productsData?.products || [];
+        
+        // Handle different response structures
+        let products = [];
+        if (Array.isArray(productsData)) {
+          products = productsData;
+        } else if (productsData?.data && Array.isArray(productsData.data)) {
+          products = productsData.data;
+        } else if (productsData?.products && Array.isArray(productsData.products)) {
+          products = productsData.products;
+        } else if (typeof productsData === 'object' && productsData !== null) {
+          products = [productsData];
+        }
         
         console.log('✅ Featured products received:', products.slice(0, 3));
         
@@ -602,15 +661,21 @@ export default function HomePage() {
     setNotification({ ...notification, isVisible: false });
   };
 
-  const handleImageLoad = (imageId) => {
-    setImagesLoaded(prev => ({ ...prev, [imageId]: true }));
+  const handleImageLoad = (productId) => {
+    setImagesLoaded(prev => ({ ...prev, [productId]: true }));
   };
 
   const handleAddToCart = async (product) => {
     try {
       console.log('🛒 Adding product to cart from homepage:', product.name);
       
-      const result = await addToCart(product.id, 1);
+      const productId = getProductId(product);
+      if (!productId) {
+        showNotification('❌ Product ID not found');
+        return;
+      }
+      
+      const result = await addToCart(productId, 1);
       
       if (result.success) {
         showNotification(`🎉 ${product.name} added to cart!`);
@@ -651,14 +716,35 @@ export default function HomePage() {
 
   const calculateDiscount = (originalPrice, currentPrice) => {
     try {
-      const original = parseInt(originalPrice?.replace(/[^0-9]/g, '') || '0');
-      const current = parseInt(currentPrice?.replace(/[^0-9]/g, '') || '0');
+      const original = typeof originalPrice === 'number' 
+        ? originalPrice 
+        : typeof originalPrice === 'string' 
+          ? parseInt(originalPrice.replace(/[^0-9]/g, '') || '0')
+          : 0;
+      
+      const current = typeof currentPrice === 'number'
+        ? currentPrice
+        : typeof currentPrice === 'string'
+          ? parseInt(currentPrice.replace(/[^0-9]/g, '') || '0')
+          : 0;
+      
       if (original <= current || original === 0) return "0%";
       const discount = ((original - current) / original) * 100;
       return `${Math.round(discount)}%`;
     } catch {
       return "0%";
     }
+  };
+
+  // Format price for display
+  const formatPrice = (priceValue) => {
+    if (typeof priceValue === 'number') {
+      return `₹${priceValue.toLocaleString()}`;
+    } else if (typeof priceValue === 'string') {
+      const num = parseInt(priceValue.replace(/[^0-9]/g, '') || '0');
+      return `₹${num.toLocaleString()}`;
+    }
+    return '₹0';
   };
 
   return (
@@ -669,6 +755,9 @@ export default function HomePage() {
           src="/images/homepage.png"
           alt="Rekraft Banner"
           className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = '/images/placeholder-laptop.png';
+          }}
         />
       </section>
 
@@ -727,6 +816,9 @@ export default function HomePage() {
                     src={cat.image}
                     alt={cat.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => {
+                      e.target.src = '/images/placeholder-laptop.png';
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -779,64 +871,83 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
-              {featuredProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="bg-white group cursor-pointer border border-gray-300 hover:border-[#8f1eae] transition-all duration-300 rounded"
-                  onClick={() => navigate(`/laptop/${product.id}`)}
-                >
-                  <div className="relative overflow-hidden bg-gradient-to-br from-[#F5F2FA] to-gray-50 aspect-square p-6">
-                    {!imagesLoaded[product.id] && <LoadingSpinner />}
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                      onLoad={() => handleImageLoad(product.id)}
-                    />
-                    <div className="absolute top-3 right-3 bg-[#8f1eae] text-white px-2 py-1 text-xs font-medium rounded-full font-inter">
-                      {product.condition}
-                    </div>
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 text-xs font-medium text-gray-700 rounded-full font-inter">
-                      {product.warranty}
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-semibold text-base mb-2 text-gray-900 line-clamp-2 tracking-wide font-poppins">{product.name}</h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-lg font-semibold text-gray-900 font-poppins">{product.price}</span>
-                      <span className="text-gray-600 text-sm line-through font-light font-roboto">{product.originalPrice}</span>
-                      <span className="bg-[#8f1eae] text-white px-2 py-1 rounded-full text-xs font-medium font-inter">
-                        Save {calculateDiscount(product.originalPrice, product.price)}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(product);
+              {featuredProducts.map((product, index) => {
+                const productId = getProductId(product);
+                
+                return (
+                  <motion.div
+                    key={productId || index}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="bg-white group cursor-pointer border border-gray-300 hover:border-[#8f1eae] transition-all duration-300 rounded"
+                    onClick={() => {
+                      if (productId) {
+                        navigate(`/laptop/${productId}`);
+                      } else {
+                        console.error('Product has no ID:', product);
+                        setQuickViewProduct(product);
+                      }
+                    }}
+                  >
+                    <div className="relative overflow-hidden bg-gradient-to-br from-[#F5F2FA] to-gray-50 aspect-square p-6">
+                      {!imagesLoaded[productId] && <LoadingSpinner />}
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                        onLoad={() => handleImageLoad(productId)}
+                        onError={(e) => {
+                          e.target.src = '/images/placeholder-laptop.png';
+                          e.target.onerror = null;
                         }}
-                        className="flex-1 bg-[#8f1eae] text-white py-3 rounded hover:bg-[#7a1a95] transition-all duration-300 font-medium text-sm uppercase tracking-widest flex items-center justify-center gap-2 font-inter"
-                      >
-                        <ShoppingCart className="w-4 h-4" />
-                        Add to Cart
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setQuickViewProduct(product);
-                        }}
-                        className="px-4 border border-gray-300 text-gray-700 py-3 rounded hover:border-[#8f1eae] hover:text-[#8f1eae] transition-all duration-300 font-medium text-sm uppercase tracking-widest flex items-center justify-center gap-2 font-inter"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Quick View
-                      </button>
+                      />
+                      <div className="absolute top-3 right-3 bg-[#8f1eae] text-white px-2 py-1 text-xs font-medium rounded-full font-inter">
+                        {product.condition || 'Refurbished'}
+                      </div>
+                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 text-xs font-medium text-gray-700 rounded-full font-inter">
+                        {product.warranty || '1Y Warranty'}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                    <div className="p-6">
+                      <h3 className="font-semibold text-base mb-2 text-gray-900 line-clamp-2 tracking-wide font-poppins">{product.name}</h3>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg font-semibold text-gray-900 font-poppins">{formatPrice(product.price)}</span>
+                        {product.originalPrice && (
+                          <>
+                            <span className="text-gray-600 text-sm line-through font-light font-roboto">{formatPrice(product.originalPrice)}</span>
+                            <span className="bg-[#8f1eae] text-white px-2 py-1 rounded-full text-xs font-medium font-inter">
+                              Save {calculateDiscount(product.originalPrice, product.price)}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(product);
+                          }}
+                          className="flex-1 bg-[#8f1eae] text-white py-3 rounded hover:bg-[#7a1a95] transition-all duration-300 font-medium text-sm uppercase tracking-widest flex items-center justify-center gap-2 font-inter"
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                          Add to Cart
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQuickViewProduct(product);
+                          }}
+                          className="px-4 border border-gray-300 text-gray-700 py-3 rounded hover:border-[#8f1eae] hover:text-[#8f1eae] transition-all duration-300 font-medium text-sm uppercase tracking-widest flex items-center justify-center gap-2 font-inter"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Quick View
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
           
@@ -985,14 +1096,14 @@ export default function HomePage() {
             className="flex flex-col sm:flex-row gap-3 justify-center"
           >
             <button 
-              onClick={() => window.location.href = '/shop'}
+              onClick={() => navigate('/shop')}
               className="bg-[#8f1eae] text-white px-6 py-3 text-sm font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] tracking-wide uppercase flex items-center justify-center gap-2 rounded font-inter"
             >
               <ShoppingCart className="w-4 h-4" />
               SHOP REFURBISHED LAPTOPS
             </button>
             <button 
-              onClick={() => window.location.href = '/sell'}
+              onClick={() => navigate('/sell')}
               className="bg-transparent text-white px-6 py-3 text-sm font-medium hover:bg-white hover:text-black transition-all duration-300 border border-white tracking-wide uppercase flex items-center justify-center gap-2 rounded font-inter"
             >
               <ArrowRight className="w-4 h-4" />

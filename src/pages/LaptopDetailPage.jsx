@@ -19,103 +19,120 @@ const LaptopDetailPage = () => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [activeTab, setActiveTab] = useState('specs');
 
-  // Fetch product details from backend
-  // Replace the useEffect that fetches the product with this version:
+  // Get product ID (handles both id and _id)
+  const getProductId = (product) => {
+    return product.id || product._id;
+  };
 
-useEffect(() => {
-  const fetchProduct = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('🔄 Fetching product details for ID:', id);
-      
-      // Validate ID
-      if (!id || id === 'undefined') {
-        throw new Error('Invalid product ID');
-      }
-      
-      // First, get all products to find the correct product
-      const productsData = await apiService.getProducts();
-      const products = Array.isArray(productsData) 
-        ? productsData 
-        : productsData?.data || productsData?.products || [];
-      
-      // Try to find the product by ID
-      let product = products.find(p => p.id === id || p._id === id);
-      
-      // If not found by ID, try to find by some other identifier (like name or slug)
-      if (!product) {
-        console.log('⚠️ Product not found by ID, trying alternative lookup...');
-        // You might need to implement a different lookup strategy here
-      }
-      
-      if (!product) {
-        // Fallback: Try to fetch product details directly
-        try {
-          const productData = await apiService.getProduct(id);
-          product = productData?.data || productData;
-        } catch (apiError) {
-          console.log('❌ Direct API call also failed:', apiError);
+  // Fetch product details from backend - FIXED VERSION
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('🔄 Fetching product details for ID:', id);
+        
+        // Validate ID
+        if (!id || id === 'undefined') {
+          throw new Error('Invalid product ID');
         }
+        
+        // First, get all products to find the correct product
+        const productsData = await apiService.getProducts();
+        
+        // Handle different response structures
+        const products = Array.isArray(productsData) 
+          ? productsData 
+          : productsData?.data || productsData?.products || [];
+        
+        // Try to find the product by ID or _id
+        let product = products.find(p => {
+          const productId = getProductId(p);
+          return productId === id;
+        });
+        
+        console.log('🔍 Product search result:', {
+          searchId: id,
+          found: !!product,
+          productId: product ? getProductId(product) : 'not found',
+          productIdsInData: products.map(p => getProductId(p))
+        });
+        
+        // If still not found, try direct API call
+        if (!product) {
+          try {
+            console.log('🔄 Trying direct API call...');
+            const productData = await apiService.getProduct(id);
+            product = productData?.data || productData;
+          } catch (apiError) {
+            console.log('❌ Direct API call failed:', apiError.message);
+          }
+        }
+        
+        if (!product) {
+          throw new Error('Product not found');
+        }
+        
+        console.log('✅ Product details received:', {
+          id: getProductId(product),
+          name: product.name,
+          price: product.price,
+          brand: product.brand
+        });
+        
+        setProduct(product);
+        
+        // Fetch related products using the correct ID
+        const productId = getProductId(product);
+        await fetchRelatedProducts(product.category, productId);
+        
+      } catch (err) {
+        console.error('❌ Error fetching product:', err);
+        setError(err.message || 'Failed to load product');
+        
+        // Navigate to shop page if product not found
+        if (err.message.includes('not found') || err.message.includes('Invalid product')) {
+          setTimeout(() => {
+            navigate('/shop');
+          }, 2000);
+        }
+      } finally {
+        setLoading(false);
       }
-      
-      if (!product) {
-        throw new Error('Product not found');
+    };
+
+    const fetchRelatedProducts = async (category, currentProductId) => {
+      try {
+        const productsData = await apiService.getProducts();
+        
+        const products = Array.isArray(productsData) 
+          ? productsData 
+          : productsData?.data || productsData?.products || [];
+        
+        // Filter products by same category, exclude current product
+        const related = products
+          .filter(p => {
+            const sameCategory = p.category === category;
+            const notCurrent = getProductId(p) !== currentProductId;
+            return sameCategory && notCurrent;
+          })
+          .slice(0, 4);
+        
+        setRelatedProducts(related);
+      } catch (err) {
+        console.error('Error fetching related products:', err);
+        setRelatedProducts([]);
       }
-      
-      console.log('✅ Product details received:', product);
-      setProduct(product);
-      
-      // Fetch related products
-      await fetchRelatedProducts(product.category, product.id || product._id);
-      
-    } catch (err) {
-      console.error('❌ Error fetching product:', err);
-      setError(err.message || 'Failed to load product');
-      
-      // Navigate to shop page if product not found
-      if (err.message.includes('not found') || err.message.includes('Invalid product')) {
-        setTimeout(() => {
-          navigate('/shop');
-        }, 2000);
-      }
-    } finally {
+    };
+
+    if (id) {
+      fetchProduct();
+    } else {
+      setError('No product ID provided');
       setLoading(false);
     }
-  };
-
-  const fetchRelatedProducts = async (category, currentProductId) => {
-    try {
-      const productsData = await apiService.getProducts();
-      
-      const products = Array.isArray(productsData) 
-        ? productsData 
-        : productsData?.data || productsData?.products || [];
-      
-      // Filter products by same category, exclude current product
-      const related = products
-        .filter(p => {
-          const sameCategory = p.category === category;
-          const notCurrent = (p.id !== currentProductId && p._id !== currentProductId);
-          return sameCategory && notCurrent;
-        })
-        .slice(0, 4);
-      
-      setRelatedProducts(related);
-    } catch (err) {
-      console.error('Error fetching related products:', err);
-      setRelatedProducts([]);
-    }
-  };
-
-  if (id) {
-    fetchProduct();
-  } else {
-    setError('No product ID provided');
-    setLoading(false);
-  }
-}, [id, navigate]);
+  }, [id, navigate]);
 
   const showNotification = (message) => {
     setNotification({ message, isVisible: true });
@@ -129,7 +146,7 @@ useEffect(() => {
       console.log('🛒 Adding product to cart:', product.name);
       
       // Ensure we're passing the correct product ID
-      const productId = product.id || product._id;
+      const productId = getProductId(product);
       if (!productId) {
         throw new Error('Product ID not found');
       }
@@ -249,7 +266,6 @@ useEffect(() => {
         </motion.div>
       )}
 
-      {/* Rest of your component remains the same... */}
       {/* Hero Section */}
       <section className="relative bg-white pt-24 pb-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#F5F2FA] to-white z-0"></div>
@@ -431,7 +447,6 @@ useEffect(() => {
                   </button>
                 </motion.div>
 
-                {/* Rest of your component continues... */}
                 {/* Trust Badges */}
                 <div className="grid grid-cols-3 gap-4 pt-8 border-t border-gray-300">
                   <div className="text-center p-4 group hover:bg-[#F5F2FA] transition-colors duration-300 rounded">
@@ -668,13 +683,13 @@ useEffect(() => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct, index) => (
                 <motion.div
-                  key={relatedProduct.id}
+                  key={getProductId(relatedProduct)}
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1, duration: 0.6 }}
                   className="group"
                 >
-                  <Link to={`/laptop/${relatedProduct.id}`}>
+                  <Link to={`/laptop/${getProductId(relatedProduct)}`}>
                     <div className="bg-white border border-gray-300 p-6 group-hover:border-[#8f1eae] transition-all duration-500 rounded-lg">
                       <div className="bg-gray-100 rounded p-6 mb-6 group-hover:bg-white transition-colors duration-300">
                         <img
@@ -687,12 +702,12 @@ useEffect(() => {
                         {relatedProduct.name}
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className="text-xl font-semibold text-gray-900">{relatedProduct.price}</span>
-                        <span className="text-sm text-gray-400 line-through font-light">{relatedProduct.originalPrice}</span>
+                        <span className="text-xl font-semibold text-gray-900">{formatPrice(relatedProduct.price)}</span>
+                        <span className="text-sm text-gray-400 line-through font-light">{formatPrice(relatedProduct.originalPrice)}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="bg-[#8f1eae]/10 text-[#8f1eae] px-3 py-1 font-medium text-xs tracking-widest rounded-full">
-                          {relatedProduct.condition.toUpperCase()}
+                          {(relatedProduct.condition || 'REFURBISHED').toUpperCase()}
                         </span>
                         <div className="text-[#8f1eae] transform translate-x-0 group-hover:translate-x-1 transition-transform duration-300">
                           →
