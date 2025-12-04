@@ -85,6 +85,11 @@ const normalizeBrandName = (brand) => {
   return brand.toLowerCase().trim();
 };
 
+// Get product ID (handles both id and _id fields)
+const getProductId = (product) => {
+  return product.id || product._id;
+};
+
 // Quick View Modal Component
 const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
   const navigate = useNavigate();
@@ -202,7 +207,13 @@ const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
                 <button
                   onClick={() => {
                     onClose();
-                    navigate(`/laptop/${product.id}`);
+                    const productId = getProductId(product);
+                    if (productId) {
+                      navigate(`/laptop/${productId}`);
+                    } else {
+                      console.error('Product has no ID:', product);
+                      onAddToCart(product);
+                    }
                   }}
                   className="block w-full bg-[#8f1eae] text-white py-3 font-medium text-sm tracking-wide uppercase transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] rounded font-roboto"
                 >
@@ -415,94 +426,105 @@ const ProductCard = ({
   handleProductClick, 
   setSelectedProduct, 
   handleAddToCart 
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -4 }}
-    className="bg-white group cursor-pointer border border-gray-300 rounded-lg overflow-hidden hover:border-[#8f1eae] transition-all duration-300"
-    onClick={() => handleProductClick(product.id)}
-  >
-    <div className="relative bg-gray-100 aspect-square">
-      {!imagesLoaded[product.id] && <LoadingSpinner />}
-      <img
-        src={product.image}
-        alt={product.name}
-        className="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500"
-        onLoad={() => handleImageLoad(product.id)}
-        onError={(e) => {
-          e.target.src = '/images/placeholder-laptop.png';
-          e.target.onerror = null;
-        }}
-      />
-      
-      {/* Condition Badge */}
-      <div className="absolute top-4 left-4 bg-[#8f1eae] text-white px-3 py-1 text-xs rounded-full font-medium tracking-wide uppercase font-roboto">
-        {product.condition || 'Refurbished'}
-      </div>
+}) => {
+  const productId = getProductId(product);
 
-      {/* Discount Badge */}
-      {product.originalPrice && (
-        <div className="absolute top-4 right-4 bg-green-100 text-green-700 px-3 py-1 text-xs rounded-full font-medium font-roboto">
-          Save {calculateDiscount(product.originalPrice, product.price)}
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      className="bg-white group cursor-pointer border border-gray-300 rounded-lg overflow-hidden hover:border-[#8f1eae] transition-all duration-300"
+      onClick={() => {
+        if (productId) {
+          handleProductClick(productId);
+        } else {
+          console.error('Product has no ID:', product);
+          setSelectedProduct(product);
+        }
+      }}
+    >
+      <div className="relative bg-gray-100 aspect-square">
+        {!imagesLoaded[productId] && <LoadingSpinner />}
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500"
+          onLoad={() => handleImageLoad(productId)}
+          onError={(e) => {
+            e.target.src = '/images/placeholder-laptop.png';
+            e.target.onerror = null;
+          }}
+        />
+        
+        {/* Condition Badge */}
+        <div className="absolute top-4 left-4 bg-[#8f1eae] text-white px-3 py-1 text-xs rounded-full font-medium tracking-wide uppercase font-roboto">
+          {product.condition || 'Refurbished'}
         </div>
-      )}
-    </div>
 
-    <div className="p-6">
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="font-semibold text-gray-900 text-base leading-tight tracking-wide font-poppins">
-          {product.name || 'Unnamed Product'}
-        </h3>
-        <span className="text-xs px-3 py-1 rounded-full font-light bg-[#F5F2FA] text-gray-600 uppercase tracking-wide font-roboto">
-          {product.brand || 'Unknown Brand'}
-        </span>
-      </div>
-      
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-xl font-semibold text-gray-900 font-poppins">
-          {formatPrice(product.price)}
-        </span>
+        {/* Discount Badge */}
         {product.originalPrice && (
-          <span className="text-gray-500 text-sm line-through font-light font-roboto">
-            {formatPrice(product.originalPrice)}
-          </span>
+          <div className="absolute top-4 right-4 bg-green-100 text-green-700 px-3 py-1 text-xs rounded-full font-medium font-roboto">
+            Save {calculateDiscount(product.originalPrice, product.price)}
+          </div>
         )}
       </div>
-      
-      <div className="text-sm text-gray-600 mb-6 space-y-3 font-light font-roboto">
-        {product.specs && product.specs.slice(0, 3).map((spec, index) => (
-          <div key={index} className="flex items-start gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#8f1eae] flex-shrink-0 mt-1.5"></div>
-            <span className="leading-relaxed">{spec}</span>
-          </div>
-        ))}
-      </div>
-      
-      <div className="space-y-3">
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedProduct(product);
-          }}
-          className="w-full border border-gray-900 text-gray-900 py-3 font-medium text-sm tracking-wide uppercase rounded transition-all duration-300 hover:bg-black hover:text-white font-roboto"
-        >
-          Quick View
-        </button>
+
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="font-semibold text-gray-900 text-base leading-tight tracking-wide font-poppins">
+            {product.name || 'Unnamed Product'}
+          </h3>
+          <span className="text-xs px-3 py-1 rounded-full font-light bg-[#F5F2FA] text-gray-600 uppercase tracking-wide font-roboto">
+            {product.brand || 'Unknown Brand'}
+          </span>
+        </div>
         
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            handleAddToCart(product);
-          }}
-          className="w-full bg-[#8f1eae] text-white py-3 font-medium text-sm tracking-wide uppercase rounded transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] font-roboto"
-        >
-          Add to Cart
-        </button>
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-xl font-semibold text-gray-900 font-poppins">
+            {formatPrice(product.price)}
+          </span>
+          {product.originalPrice && (
+            <span className="text-gray-500 text-sm line-through font-light font-roboto">
+              {formatPrice(product.originalPrice)}
+            </span>
+          )}
+        </div>
+        
+        <div className="text-sm text-gray-600 mb-6 space-y-3 font-light font-roboto">
+          {product.specs && product.specs.slice(0, 3).map((spec, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#8f1eae] flex-shrink-0 mt-1.5"></div>
+              <span className="leading-relaxed">{spec}</span>
+            </div>
+          ))}
+        </div>
+        
+        <div className="space-y-3">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedProduct(product);
+            }}
+            className="w-full border border-gray-900 text-gray-900 py-3 font-medium text-sm tracking-wide uppercase rounded transition-all duration-300 hover:bg-black hover:text-white font-roboto"
+          >
+            Quick View
+          </button>
+          
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart(product);
+            }}
+            className="w-full bg-[#8f1eae] text-white py-3 font-medium text-sm tracking-wide uppercase rounded transition-all duration-300 border border-[#8f1eae] hover:bg-[#7a1a99] font-roboto"
+          >
+            Add to Cart
+          </button>
+        </div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 export default function ShopPage() {
   const navigate = useNavigate();
@@ -545,15 +567,27 @@ export default function ShopPage() {
         console.log('🔄 Fetching all products from backend...');
         
         const productsData = await apiService.getProducts();
-        const products = Array.isArray(productsData) ? productsData : 
-                         productsData?.data || productsData?.products || [];
+        
+        // Handle different response structures
+        let products = [];
+        if (Array.isArray(productsData)) {
+          products = productsData;
+        } else if (productsData?.data && Array.isArray(productsData.data)) {
+          products = productsData.data;
+        } else if (productsData?.products && Array.isArray(productsData.products)) {
+          products = productsData.products;
+        } else if (typeof productsData === 'object' && productsData !== null) {
+          // If it's a single product object, wrap it in an array
+          products = [productsData];
+        }
         
         console.log('✅ Backend products received:', products.length, 'products');
         
-        // DEBUG: Log first product to see structure
+        // Debug: Log first few products to see their structure
         if (products.length > 0) {
           console.log('📦 Sample product data:', {
             id: products[0].id,
+            _id: products[0]._id,
             name: products[0].name,
             price: products[0].price,
             priceType: typeof products[0].price,
@@ -563,15 +597,21 @@ export default function ShopPage() {
           });
         }
         
-        const brands = [...new Set(products.map(product => product.brand).filter(Boolean))].sort();
-        setAvailableBrands(brands);
+        // Extract unique brands
+        const brands = [...new Set(
+          products
+            .map(product => product.brand)
+            .filter(Boolean)
+            .map(brand => brand.trim())
+        )].sort();
         
+        setAvailableBrands(brands);
         setProducts(products);
         setFilteredProducts(products);
         
       } catch (err) {
         console.error('❌ Error fetching products:', err);
-        setError(err.message);
+        setError(err.message || 'Failed to load products');
       } finally {
         setLoading(false);
       }
@@ -653,9 +693,9 @@ export default function ShopPage() {
         case "price-high":
           return priceB - priceA;
         case "name-asc":
-          return a.name?.localeCompare(b.name || '') || 0;
+          return (a.name || '').localeCompare(b.name || '');
         case "name-desc":
-          return b.name?.localeCompare(a.name || '') || 0;
+          return (b.name || '').localeCompare(a.name || '');
         default: // "featured"
           return 0; // Keep original order
       }
@@ -726,15 +766,21 @@ export default function ShopPage() {
     setTimeout(() => setNotification({ ...notification, isVisible: false }), 3000);
   };
 
-  const handleImageLoad = (imageId) => {
-    setImagesLoaded(prev => ({ ...prev, [imageId]: true }));
+  const handleImageLoad = (productId) => {
+    setImagesLoaded(prev => ({ ...prev, [productId]: true }));
   };
 
   const handleAddToCart = async (product) => {
     try {
       console.log('🛒 Adding product to cart:', product.name);
       
-      const result = await addToCart(product.id, 1);
+      const productId = getProductId(product);
+      if (!productId) {
+        showNotification('❌ Product ID not found');
+        return;
+      }
+      
+      const result = await addToCart(productId, 1);
       
       if (result.success) {
         showNotification(`✅ ${product.name} added to cart!`);
@@ -748,7 +794,11 @@ export default function ShopPage() {
   };
 
   const handleProductClick = (productId) => {
-    navigate(`/laptop/${productId}`);
+    if (productId) {
+      navigate(`/laptop/${productId}`);
+    } else {
+      console.error('Cannot navigate: Product ID is undefined');
+    }
   };
 
   const resetAllFilters = () => {
@@ -971,7 +1021,7 @@ export default function ShopPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredProducts.map((product) => (
                     <ProductCard
-                      key={product.id}
+                      key={getProductId(product) || product.name}
                       product={product}
                       imagesLoaded={imagesLoaded}
                       handleImageLoad={handleImageLoad}

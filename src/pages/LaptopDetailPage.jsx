@@ -20,73 +20,102 @@ const LaptopDetailPage = () => {
   const [activeTab, setActiveTab] = useState('specs');
 
   // Fetch product details from backend
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('🔄 Fetching product details for ID:', id);
-        
-        // Fixed: Use only one API call method
-        const productData = await apiService.getProduct(id);
-        
-        // Handle different response structures
-        const product = productData?.data || productData;
-        
-        if (!product) {
-          throw new Error('Product not found');
-        }
-        
-        console.log('✅ Product details received:', product);
-        setProduct(product);
-        
-        // Fetch related products
-        await fetchRelatedProducts(product.category, product.id);
-        
-      } catch (err) {
-        console.error('❌ Error fetching product:', err);
-        setError(err.message || 'Failed to load product');
-        
-        // Navigate to shop page if product not found
-        if (err.message.includes('not found') || err.response?.status === 404) {
-          setTimeout(() => {
-            navigate('/shop');
-          }, 2000);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Replace the useEffect that fetches the product with this version:
 
-    const fetchRelatedProducts = async (category, currentProductId) => {
-      try {
-        const productsData = await apiService.getProducts();
-        
-        // Handle different response structures
-        const products = Array.isArray(productsData) 
-          ? productsData 
-          : productsData?.data || productsData?.products || [];
-        
-        // Filter products by same category, exclude current product
-        const related = products
-          .filter(p => p.category === category && p.id !== currentProductId && p._id !== currentProductId)
-          .slice(0, 4);
-        
-        setRelatedProducts(related);
-      } catch (err) {
-        console.error('Error fetching related products:', err);
-        setRelatedProducts([]);
+useEffect(() => {
+  const fetchProduct = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 Fetching product details for ID:', id);
+      
+      // Validate ID
+      if (!id || id === 'undefined') {
+        throw new Error('Invalid product ID');
       }
-    };
-
-    if (id) {
-      fetchProduct();
-    } else {
-      setError('No product ID provided');
+      
+      // First, get all products to find the correct product
+      const productsData = await apiService.getProducts();
+      const products = Array.isArray(productsData) 
+        ? productsData 
+        : productsData?.data || productsData?.products || [];
+      
+      // Try to find the product by ID
+      let product = products.find(p => p.id === id || p._id === id);
+      
+      // If not found by ID, try to find by some other identifier (like name or slug)
+      if (!product) {
+        console.log('⚠️ Product not found by ID, trying alternative lookup...');
+        // You might need to implement a different lookup strategy here
+      }
+      
+      if (!product) {
+        // Fallback: Try to fetch product details directly
+        try {
+          const productData = await apiService.getProduct(id);
+          product = productData?.data || productData;
+        } catch (apiError) {
+          console.log('❌ Direct API call also failed:', apiError);
+        }
+      }
+      
+      if (!product) {
+        throw new Error('Product not found');
+      }
+      
+      console.log('✅ Product details received:', product);
+      setProduct(product);
+      
+      // Fetch related products
+      await fetchRelatedProducts(product.category, product.id || product._id);
+      
+    } catch (err) {
+      console.error('❌ Error fetching product:', err);
+      setError(err.message || 'Failed to load product');
+      
+      // Navigate to shop page if product not found
+      if (err.message.includes('not found') || err.message.includes('Invalid product')) {
+        setTimeout(() => {
+          navigate('/shop');
+        }, 2000);
+      }
+    } finally {
       setLoading(false);
     }
-  }, [id, navigate]);
+  };
+
+  const fetchRelatedProducts = async (category, currentProductId) => {
+    try {
+      const productsData = await apiService.getProducts();
+      
+      const products = Array.isArray(productsData) 
+        ? productsData 
+        : productsData?.data || productsData?.products || [];
+      
+      // Filter products by same category, exclude current product
+      const related = products
+        .filter(p => {
+          const sameCategory = p.category === category;
+          const notCurrent = (p.id !== currentProductId && p._id !== currentProductId);
+          return sameCategory && notCurrent;
+        })
+        .slice(0, 4);
+      
+      setRelatedProducts(related);
+    } catch (err) {
+      console.error('Error fetching related products:', err);
+      setRelatedProducts([]);
+    }
+  };
+
+  if (id) {
+    fetchProduct();
+  } else {
+    setError('No product ID provided');
+    setLoading(false);
+  }
+}, [id, navigate]);
 
   const showNotification = (message) => {
     setNotification({ message, isVisible: true });
