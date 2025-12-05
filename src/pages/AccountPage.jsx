@@ -263,7 +263,7 @@ export default function AccountPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-light text-gray-900 mb-2 tracking-tight font-montserrat">My Account</h1>
-            <p className="text-gray-600 text-base font-light font-lato">Welcome back, {user.name} 👋</p>
+            <p className="text-gray-600 text-base font-light font-lato">Welcome back, {user.name}</p>
           </div>
           <button
             onClick={logout}
@@ -637,12 +637,6 @@ export default function AccountPage() {
                     </div>
                     <h4 className="text-xl font-light text-gray-900 mb-2 tracking-tight font-montserrat">No Addresses</h4>
                     <p className="text-gray-600 mb-8 font-light font-lato">You haven't added any addresses yet.</p>
-                    <button
-                      onClick={() => setShowAddAddress(true)}
-                      className="bg-[#8f1eae] text-white px-8 py-3 font-medium text-sm hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase tracking-wide font-inter inline-block"
-                    >
-                      Add Your First Address
-                    </button>
                   </div>
                 )}
               </div>

@@ -1,22 +1,68 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { ShoppingCart, Trash2, ArrowRight, Plus, Minus, Shield } from "lucide-react";
+import { ShoppingCart, Trash2, ArrowRight, Plus, Minus, Shield, RefreshCw } from "lucide-react";
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateCartItem, clearCart } = useAuth();
+  const { cart, removeFromCart, updateCartItem, clearCart, cartLoading, fetchCart, user } = useAuth();
   const [updating, setUpdating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [displayCart, setDisplayCart] = useState({ items: [], totalPrice: 0 });
+
+  // Initialize display cart from context
+  useEffect(() => {
+    if (cart && cart.items) {
+      setDisplayCart(cart);
+    }
+  }, [cart]);
+
+  // Fetch cart on mount if user is logged in but cart is empty
+  useEffect(() => {
+    if (user && (!cart || cart.items.length === 0) && !cartLoading) {
+      console.log('🔄 Fetching cart on mount...');
+      fetchCart();
+    }
+  }, [user, cart, cartLoading, fetchCart]);
+
+  // Handle manual refresh
+  const handleRefreshCart = async () => {
+    setRefreshing(true);
+    try {
+      await fetchCart();
+    } catch (error) {
+      console.error('Error refreshing cart:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleQuantityChange = async (itemId, newQuantity) => {
     if (newQuantity < 1) return;
     
     setUpdating(true);
     try {
+      // Optimistically update local state
+      const updatedItems = displayCart.items.map(item => {
+        if (item._id === itemId) {
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
+      });
+      
+      const newTotal = updatedItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+      setDisplayCart({
+        items: updatedItems,
+        totalPrice: newTotal
+      });
+      
+      // Update on server
       await updateCartItem(itemId, newQuantity);
     } catch (error) {
       console.error('Error updating quantity:', error);
+      // Revert to original state on error
+      fetchCart();
     } finally {
       setUpdating(false);
     }
@@ -24,27 +70,43 @@ export default function CartPage() {
 
   const handleRemoveItem = async (itemId) => {
     try {
+      // Optimistically update local state
+      const updatedItems = displayCart.items.filter(item => item._id !== itemId);
+      const newTotal = updatedItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+      setDisplayCart({
+        items: updatedItems,
+        totalPrice: newTotal
+      });
+      
+      // Remove from server
       await removeFromCart(itemId);
     } catch (error) {
       console.error('Error removing from cart:', error);
+      // Revert to original state on error
+      fetchCart();
     }
   };
 
   const handleClearCart = async () => {
-    try {
-      await clearCart();
-    } catch (error) {
-      console.error('Error clearing cart:', error);
+    if (window.confirm('Are you sure you want to clear your cart?')) {
+      try {
+        setDisplayCart({ items: [], totalPrice: 0 });
+        await clearCart();
+      } catch (error) {
+        console.error('Error clearing cart:', error);
+        fetchCart();
+      }
     }
   };
 
-  // Calculate totals from database cart
-  const total = cart?.totalPrice || 0;
-  const itemCount = cart?.items?.reduce((count, item) => count + item.quantity, 0) || 0;
+  // Calculate totals from display cart
+  const total = displayCart?.totalPrice || 0;
+  const itemCount = displayCart?.items?.reduce((count, item) => count + item.quantity, 0) || 0;
   const shipping = total > 50000 ? 0 : 199;
   const finalTotal = total + shipping;
 
-  if (!cart) {
+  // Show loading state
+  if (cartLoading && displayCart.items.length === 0) {
     return (
       <div className="pt-20 min-h-screen bg-white flex items-center justify-center font-lato">
         <div className="text-center">
@@ -55,18 +117,64 @@ export default function CartPage() {
     );
   }
 
+  // Check if user is not logged in
+  if (!user) {
+    return (
+      <div className="pt-20 min-h-screen bg-white font-lato font-light">
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="text-center py-20">
+            <div className="w-24 h-24 bg-[#F5F2FA] rounded-[4px] flex items-center justify-center mx-auto mb-6">
+              <ShoppingCart className="w-12 h-12 text-[#8f1eae]" />
+            </div>
+            <h2 className="text-2xl font-light text-gray-900 mb-4 tracking-tight font-montserrat">Please Login</h2>
+            <p className="text-gray-600 text-base mb-8 max-w-md mx-auto font-lato font-light">
+              You need to be logged in to view your cart.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                to="/login" 
+                className="bg-[#8f1eae] text-white px-8 py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide inline-flex items-center justify-center gap-2"
+              >
+                <span>Login</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link 
+                to="/shop" 
+                className="border border-gray-300 text-gray-700 px-8 py-3 font-inter font-medium hover:border-[#8f1eae] hover:text-[#8f1eae] transition-all duration-300 rounded-[4px] uppercase text-sm tracking-wide inline-flex items-center justify-center gap-2"
+              >
+                <span>Continue Shopping</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="pt-20 min-h-screen bg-white font-lato font-light">
       <div className="max-w-6xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-light text-gray-900 mb-4 tracking-tight font-montserrat">Your Shopping Cart</h1>
-          <p className="text-gray-600 text-base font-lato font-light">
-            {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
-          </p>
+        {/* Header with refresh button */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-12">
+          <div className="text-center sm:text-left mb-4 sm:mb-0">
+            <h1 className="text-3xl font-light text-gray-900 mb-2 tracking-tight font-montserrat">Your Shopping Cart</h1>
+            <p className="text-gray-600 text-base font-lato font-light">
+              {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
+            </p>
+          </div>
+          
+          <button
+            onClick={handleRefreshCart}
+            disabled={refreshing}
+            className="flex items-center gap-2 text-[#8f1eae] hover:text-[#7a1a99] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-inter font-medium text-sm"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh Cart'}
+          </button>
         </div>
         
-        {cart.items.length === 0 ? (
+        {displayCart.items.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -77,45 +185,63 @@ export default function CartPage() {
             </div>
             <h2 className="text-2xl font-light text-gray-900 mb-4 tracking-tight font-montserrat">Your cart is empty</h2>
             <p className="text-gray-600 text-base mb-8 max-w-md mx-auto font-lato font-light">
-              Looks like you haven't added any products to your cart yet.
+              {user ? "Looks like you haven't added any products to your cart yet." : "Please login to view your cart."}
             </p>
-            <Link 
-              to="/shop" 
-              className="bg-[#8f1eae] text-white px-8 py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide inline-flex items-center gap-2"
-            >
-              <span>Start Shopping</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                to="/shop" 
+                className="bg-[#8f1eae] text-white px-8 py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide inline-flex items-center justify-center gap-2"
+              >
+                <span>Start Shopping</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              {user && (
+                <button
+                  onClick={handleRefreshCart}
+                  disabled={refreshing}
+                  className="border border-gray-300 text-gray-700 px-8 py-3 font-inter font-medium hover:border-[#8f1eae] hover:text-[#8f1eae] transition-all duration-300 rounded-[4px] uppercase text-sm tracking-wide inline-flex items-center justify-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  {refreshing ? 'Refreshing...' : 'Refresh Cart'}
+                </button>
+              )}
+            </div>
           </motion.div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {cart.items.map((item, index) => (
+              {displayCart.items.map((item, index) => (
                 <motion.div
-                  key={item._id}
+                  key={item._id || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex gap-6 p-6 bg-white border border-gray-200 rounded-[4px] hover:border-[#8f1eae] transition-all duration-300"
+                  className="flex flex-col sm:flex-row gap-6 p-6 bg-white border border-gray-200 rounded-[4px] hover:border-[#8f1eae] transition-all duration-300"
                 >
                   {/* Product Image */}
-                  <div className="w-32 h-32 bg-gray-50 rounded-[4px] flex items-center justify-center shrink-0 border border-gray-200">
+                  <div className="w-full sm:w-32 h-32 bg-gray-50 rounded-[4px] flex items-center justify-center shrink-0 border border-gray-200">
                     <img
                       src={item.productId?.images?.[0] || item.productId?.image || '/placeholder-image.jpg'}
-                      alt={item.productId?.name}
-                      className="w-24 h-24 object-contain"
+                      alt={item.productId?.name || 'Product'}
+                      className="max-w-full max-h-full object-contain p-2"
                       loading="lazy"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/placeholder-image.jpg';
+                      }}
                     />
                   </div>
                   
                   {/* Product Details */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-xl font-medium text-gray-900 pr-4 tracking-wide font-inter">{item.productId?.name}</h3>
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-3 gap-3">
+                      <h3 className="text-xl font-medium text-gray-900 pr-4 tracking-wide font-inter break-words">
+                        {item.productId?.name || 'Unknown Product'}
+                      </h3>
                       <button
                         onClick={() => handleRemoveItem(item._id)}
-                        className="text-gray-600 hover:text-red-600 font-inter font-medium text-sm transition-colors duration-300 flex items-center gap-1 uppercase tracking-wide"
+                        className="text-gray-600 hover:text-red-600 font-inter font-medium text-sm transition-colors duration-300 flex items-center gap-1 uppercase tracking-wide whitespace-nowrap"
                         disabled={updating}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -123,10 +249,12 @@ export default function CartPage() {
                       </button>
                     </div>
                     
-                    <p className="text-2xl font-medium text-[#8f1eae] mb-6 font-inter">₹{item.price?.toLocaleString()}</p>
+                    <p className="text-2xl font-medium text-[#8f1eae] mb-6 font-inter">
+                      ₹{(item.price || 0).toLocaleString()}
+                    </p>
                     
                     {/* Quantity Controls */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center">
                         <button
                           onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
@@ -150,7 +278,7 @@ export default function CartPage() {
                       <div className="text-right">
                         <p className="text-sm text-gray-600 mb-1 font-lato font-light">Item Total</p>
                         <p className="text-lg font-inter font-medium text-gray-900">
-                          ₹{(item.quantity * item.price).toLocaleString()}
+                          ₹{((item.quantity || 0) * (item.price || 0)).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -183,7 +311,7 @@ export default function CartPage() {
                     </span>
                   </div>
                   
-                  {shipping > 0 && (
+                  {shipping > 0 && total > 0 && (
                     <div className="bg-[#F5F2FA] border border-[#8f1eae] rounded-[4px] p-3">
                       <p className="text-[#8f1eae] text-sm text-center font-lato font-light">
                         Add ₹{(50000 - total).toLocaleString()} more for free shipping!
@@ -203,7 +331,13 @@ export default function CartPage() {
                 <div className="space-y-3">
                   <Link
                     to="/checkout"
-                    className="w-full bg-[#8f1eae] text-white py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide flex items-center justify-center gap-2"
+                    className="w-full bg-[#8f1eae] text-white py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={(e) => {
+                      if (displayCart.items.length === 0) {
+                        e.preventDefault();
+                        alert('Your cart is empty!');
+                      }
+                    }}
                   >
                     <span>Proceed to Checkout</span>
                     <ArrowRight className="w-4 h-4" />
@@ -211,7 +345,8 @@ export default function CartPage() {
                   
                   <button
                     onClick={handleClearCart}
-                    className="w-full border border-gray-300 text-gray-700 py-3 font-inter font-medium hover:bg-gray-50 hover:text-red-600 hover:border-red-600 transition-all duration-300 rounded-[4px] uppercase text-sm tracking-wide flex items-center justify-center gap-2"
+                    className="w-full border border-gray-300 text-gray-700 py-3 font-inter font-medium hover:bg-gray-50 hover:text-red-600 hover:border-red-600 transition-all duration-300 rounded-[4px] uppercase text-sm tracking-wide flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={displayCart.items.length === 0}
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Clear Cart</span>
