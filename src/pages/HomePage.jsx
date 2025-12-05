@@ -431,7 +431,6 @@ const BrandsSection = () => {
                   src={brand.logo}
                   alt={`${brand.name} logo`}
                   className="max-h-full max-w-full object-contain opacity-70 group-hover:opacity-100 transition-opacity duration-300"
-                  loading="lazy"
                   onError={(e) => {
                     console.error(`Failed to load logo for ${brand.name}`);
                     e.target.src = '/images/placeholder-laptop.png';
@@ -601,13 +600,10 @@ export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Banner loading state
-  const [bannerLoaded, setBannerLoaded] = useState(false);
-  
   const navigate = useNavigate();
   const { addToCart } = useAuth();
 
-  // Fetch featured products from backend
+  // Fetch featured products from backend - FIXED VERSION
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
@@ -742,96 +738,16 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-roboto pt-20">
-      {/* OPTIMIZED HERO BANNER with responsive images */}
-      <section className="w-full relative overflow-hidden" style={{ minHeight: '400px' }}>
-        {/* Loading skeleton */}
-        {!bannerLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse z-10 flex items-center justify-center">
-            <div className="w-12 h-12 border-2 border-gray-300 border-t-[#8f1eae] rounded-full animate-spin"></div>
-          </div>
-        )}
-
-        <picture>
-          {/* WebP format for modern browsers */}
-          <source
-            media="(min-width: 1024px)"
-            srcSet="/images/banner-desktop.webp"
-            type="image/webp"
-          />
-          <source
-            media="(min-width: 768px)"
-            srcSet="/images/banner-tablet.webp"
-            type="image/webp"
-          />
-          <source
-            srcSet="/images/banner-mobile.webp"
-            type="image/webp"
-          />
-          
-          {/* JPEG fallback for older browsers */}
-          <source
-            media="(min-width: 1024px)"
-            srcSet="/images/banner-desktop.jpg"
-            type="image/jpeg"
-          />
-          <source
-            media="(min-width: 768px)"
-            srcSet="/images/banner-tablet.jpg"
-            type="image/jpeg"
-          />
-          <img
-            src="/images/banner-desktop.jpg"
-            alt="Rekraft - Premium Refurbished Laptops | Buy & Sell Certified Pre-Owned Electronics"
-            className={`w-full h-full object-cover transition-opacity duration-500 ${
-              bannerLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            loading="eager"
-            decoding="async"
-            width="1920"
-            height="800"
-            onLoad={() => setBannerLoaded(true)}
-            onError={(e) => {
-              console.error('Banner image failed to load:', e);
-              // Fallback to a solid color or simple gradient
-              e.target.style.display = 'none';
-              document.querySelector('.banner-fallback')?.classList.remove('hidden');
-              setBannerLoaded(true);
-            }}
-          />
-        </picture>
-        
-        {/* Fallback banner if image fails */}
-        <div className="hidden banner-fallback absolute inset-0 bg-gradient-to-r from-[#8f1eae] to-[#6b1680] flex items-center justify-center">
-          <div className="text-center text-white p-8">
-            <h1 className="text-4xl font-bold mb-4 font-poppins">Rekraft</h1>
-            <p className="text-xl mb-6 font-roboto">Premium Refurbished Laptops</p>
-            <button 
-              onClick={() => navigate('/shop')}
-              className="bg-white text-[#8f1eae] px-8 py-3 rounded font-medium hover:bg-gray-100 transition-colors duration-300 font-inter"
-            >
-              Shop Now
-            </button>
-          </div>
-        </div>
-        
-        {/* Optional: Add CTA overlay on banner */}
-        <div className="absolute bottom-8 left-8 right-8 md:left-16 md:right-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white/90 backdrop-blur-sm p-6 rounded max-w-md shadow-lg"
-          >
-            <h2 className="text-2xl font-semibold mb-3 text-gray-900 font-poppins">Certified Refurbished Laptops</h2>
-            <p className="text-gray-700 mb-4 text-sm font-roboto">Save up to 60% on premium laptops with 1-year warranty</p>
-            <button 
-              onClick={() => navigate('/shop')}
-              className="bg-[#8f1eae] text-white px-6 py-2 rounded hover:bg-[#7a1a95] transition-colors duration-300 font-medium text-sm font-inter"
-            >
-              Explore Collection
-            </button>
-          </motion.div>
-        </div>
+      {/* Simple Full Hero Banner */}
+      <section className="w-full relative overflow-hidden">
+        <img
+          src="/images/homepage.png"
+          alt="Rekraft Banner"
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = '/images/placeholder-laptop.png';
+          }}
+        />
       </section>
 
       {/* Stats Section */}
@@ -889,7 +805,6 @@ export default function HomePage() {
                     src={cat.image}
                     alt={cat.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    loading="lazy"
                     onError={(e) => {
                       e.target.src = '/images/placeholder-laptop.png';
                     }}
@@ -970,7 +885,6 @@ export default function HomePage() {
                         src={product.image}
                         alt={product.name}
                         className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
                         onLoad={() => handleImageLoad(productId)}
                         onError={(e) => {
                           e.target.src = '/images/placeholder-laptop.png';
