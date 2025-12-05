@@ -416,27 +416,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const clearCart = async () => {
-    if (!apiService.token) {
-      console.error('❌ Cannot clear cart: not authenticated');
-      return { success: false, message: 'Please login to modify cart' };
-    }
+  // src/context/AuthContext.js - UPDATED clearCart function
+const clearCart = async () => {
+  if (!apiService.token) {
+    console.error('❌ Cannot clear cart: not authenticated');
+    return { success: false, message: 'Please login to modify cart' };
+  }
+  
+  try {
+    console.log('🛒 Clearing cart');
+    const data = await apiService.clearCart();
     
-    try {
-      console.log('🛒 Clearing cart');
-      const data = await apiService.clearCart();
-      
-      if (data.success) {
-        setCart({ items: [], totalPrice: 0 });
-        console.log('✅ Cart cleared');
-        return { success: true, message: data.message || 'Cart cleared' };
-      }
-      return { success: false, message: data.error || 'Failed to clear cart' };
-    } catch (error) {
-      console.error('❌ Error clearing cart:', error);
-      return { success: false, message: error.message };
+    if (data.success) {
+      // CRITICAL FIX: Update cart state immediately and return success
+      setCart({ items: [], totalPrice: 0 });
+      console.log('✅ Cart cleared in context');
+      return { success: true, message: data.message || 'Cart cleared', cart: { items: [], totalPrice: 0 } };
     }
-  };
+    return { success: false, message: data.error || 'Failed to clear cart' };
+  } catch (error) {
+    console.error('❌ Error clearing cart:', error);
+    // Even on error, clear the local cart state
+    setCart({ items: [], totalPrice: 0 });
+    return { success: false, message: error.message };
+  }
+};
 
   // ========== ADDRESS FUNCTIONS ==========
   const addAddress = async (addressData) => {

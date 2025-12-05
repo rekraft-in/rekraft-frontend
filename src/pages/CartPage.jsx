@@ -1,30 +1,45 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { ShoppingCart, Trash2, ArrowRight, Plus, Minus, Shield, RefreshCw } from "lucide-react";
+import { ShoppingCart, Trash2, ArrowRight, Plus, Minus, Shield, RefreshCw, Loader2 } from "lucide-react";
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateCartItem, clearCart, cartLoading, fetchCart, user } = useAuth();
+  const { 
+    cart, 
+    removeFromCart, 
+    updateCartItem, 
+    clearCart, 
+    cartLoading, 
+    fetchCart, 
+    user 
+  } = useAuth();
+  
   const [updating, setUpdating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [displayCart, setDisplayCart] = useState({ items: [], totalPrice: 0 });
+  const [clearing, setClearing] = useState(false);
+  const [localCart, setLocalCart] = useState({ items: [], totalPrice: 0 });
+  const hasFetchedInitial = useRef(false);
+  const isInitialMount = useRef(true);
 
-  // Initialize display cart from context
+  // Initialize local cart from context
   useEffect(() => {
     if (cart && cart.items) {
-      setDisplayCart(cart);
+      console.log('🔄 Updating local cart from context:', cart.items.length, 'items');
+      setLocalCart(cart);
     }
   }, [cart]);
 
-  // Fetch cart on mount if user is logged in but cart is empty
+  // Fetch cart only once on mount if user is logged in
   useEffect(() => {
-    if (user && (!cart || cart.items.length === 0) && !cartLoading) {
-      console.log('🔄 Fetching cart on mount...');
+    if (isInitialMount.current && user && !cartLoading && !hasFetchedInitial.current) {
+      console.log('🔄 Initial cart fetch for user:', user.email);
       fetchCart();
+      hasFetchedInitial.current = true;
+      isInitialMount.current = false;
     }
-  }, [user, cart, cartLoading, fetchCart]);
+  }, [user, cartLoading, fetchCart]);
 
   // Handle manual refresh
   const handleRefreshCart = async () => {
@@ -44,15 +59,15 @@ export default function CartPage() {
     setUpdating(true);
     try {
       // Optimistically update local state
-      const updatedItems = displayCart.items.map(item => {
+      const updatedItems = localCart.items.map(item => {
         if (item._id === itemId) {
           return { ...item, quantity: newQuantity };
         }
         return item;
       });
       
-      const newTotal = updatedItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-      setDisplayCart({
+      const newTotal = updatedItems.reduce((sum, item) => sum + (item.quantity * (item.price || 0)), 0);
+      setLocalCart({
         items: updatedItems,
         totalPrice: newTotal
       });
@@ -61,8 +76,8 @@ export default function CartPage() {
       await updateCartItem(itemId, newQuantity);
     } catch (error) {
       console.error('Error updating quantity:', error);
-      // Revert to original state on error
-      fetchCart();
+      // Revert by fetching fresh data
+      await fetchCart();
     } finally {
       setUpdating(false);
     }
@@ -71,9 +86,9 @@ export default function CartPage() {
   const handleRemoveItem = async (itemId) => {
     try {
       // Optimistically update local state
-      const updatedItems = displayCart.items.filter(item => item._id !== itemId);
-      const newTotal = updatedItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-      setDisplayCart({
+      const updatedItems = localCart.items.filter(item => item._id !== itemId);
+      const newTotal = updatedItems.reduce((sum, item) => sum + (item.quantity * (item.price || 0)), 0);
+      setLocalCart({
         items: updatedItems,
         totalPrice: newTotal
       });
@@ -82,36 +97,62 @@ export default function CartPage() {
       await removeFromCart(itemId);
     } catch (error) {
       console.error('Error removing from cart:', error);
-      // Revert to original state on error
-      fetchCart();
+      // Revert by fetching fresh data
+      await fetchCart();
     }
   };
 
   const handleClearCart = async () => {
     if (window.confirm('Are you sure you want to clear your cart?')) {
+      setClearing(true);
       try {
-        setDisplayCart({ items: [], totalPrice: 0 });
-        await clearCart();
+        // Immediately clear local state for instant feedback
+        setLocalCart({ items: [], totalPrice: 0 });
+        
+        // Call clear cart API
+        const result = await clearCart();
+        
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to clear cart');
+        }
+        
+        console.log('✅ Cart cleared successfully');
       } catch (error) {
         console.error('Error clearing cart:', error);
-        fetchCart();
+        // On error, fetch the current state from server
+        await fetchCart();
+        alert('Failed to clear cart. Please try again.');
+      } finally {
+        setClearing(false);
       }
     }
   };
 
-  // Calculate totals from display cart
-  const total = displayCart?.totalPrice || 0;
-  const itemCount = displayCart?.items?.reduce((count, item) => count + item.quantity, 0) || 0;
+  // Calculate totals from local cart
+  const total = localCart?.totalPrice || 0;
+  const itemCount = localCart?.items?.reduce((count, item) => count + (item.quantity || 0), 0) || 0;
   const shipping = total > 50000 ? 0 : 199;
   const finalTotal = total + shipping;
 
-  // Show loading state
-  if (cartLoading && displayCart.items.length === 0) {
+  // Show loading state only on initial load
+  if (cartLoading && localCart.items.length === 0 && !hasFetchedInitial.current) {
     return (
       <div className="pt-20 min-h-screen bg-white flex items-center justify-center font-lato">
         <div className="text-center">
-          <div className="w-12 h-12 border-2 border-gray-300 border-t-[#8f1eae] rounded-full animate-spin mx-auto"></div>
+          <Loader2 className="w-12 h-12 text-[#8f1eae] animate-spin mx-auto" />
           <p className="text-gray-600 mt-4 font-light">Loading your cart...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show clearing state
+  if (clearing) {
+    return (
+      <div className="pt-20 min-h-screen bg-white flex items-center justify-center font-lato">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-[#8f1eae] animate-spin mx-auto" />
+          <p className="text-gray-600 mt-4 font-light">Clearing your cart...</p>
         </div>
       </div>
     );
@@ -166,15 +207,15 @@ export default function CartPage() {
           
           <button
             onClick={handleRefreshCart}
-            disabled={refreshing}
+            disabled={refreshing || cartLoading}
             className="flex items-center gap-2 text-[#8f1eae] hover:text-[#7a1a99] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-inter font-medium text-sm"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh Cart'}
+            <RefreshCw className={`w-4 h-4 ${refreshing || cartLoading ? 'animate-spin' : ''}`} />
+            {refreshing || cartLoading ? 'Refreshing...' : 'Refresh Cart'}
           </button>
         </div>
         
-        {displayCart.items.length === 0 ? (
+        {localCart.items.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -185,7 +226,7 @@ export default function CartPage() {
             </div>
             <h2 className="text-2xl font-light text-gray-900 mb-4 tracking-tight font-montserrat">Your cart is empty</h2>
             <p className="text-gray-600 text-base mb-8 max-w-md mx-auto font-lato font-light">
-              {user ? "Looks like you haven't added any products to your cart yet." : "Please login to view your cart."}
+              Looks like you haven't added any products to your cart yet.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
@@ -195,23 +236,21 @@ export default function CartPage() {
                 <span>Start Shopping</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              {user && (
-                <button
-                  onClick={handleRefreshCart}
-                  disabled={refreshing}
-                  className="border border-gray-300 text-gray-700 px-8 py-3 font-inter font-medium hover:border-[#8f1eae] hover:text-[#8f1eae] transition-all duration-300 rounded-[4px] uppercase text-sm tracking-wide inline-flex items-center justify-center gap-2"
-                >
-                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  {refreshing ? 'Refreshing...' : 'Refresh Cart'}
-                </button>
-              )}
+              <button
+                onClick={handleRefreshCart}
+                disabled={refreshing}
+                className="border border-gray-300 text-gray-700 px-8 py-3 font-inter font-medium hover:border-[#8f1eae] hover:text-[#8f1eae] transition-all duration-300 rounded-[4px] uppercase text-sm tracking-wide inline-flex items-center justify-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh Cart'}
+              </button>
             </div>
           </motion.div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {displayCart.items.map((item, index) => (
+              {localCart.items.map((item, index) => (
                 <motion.div
                   key={item._id || index}
                   initial={{ opacity: 0, y: 20 }}
@@ -241,8 +280,8 @@ export default function CartPage() {
                       </h3>
                       <button
                         onClick={() => handleRemoveItem(item._id)}
-                        className="text-gray-600 hover:text-red-600 font-inter font-medium text-sm transition-colors duration-300 flex items-center gap-1 uppercase tracking-wide whitespace-nowrap"
                         disabled={updating}
+                        className="text-gray-600 hover:text-red-600 font-inter font-medium text-sm transition-colors duration-300 flex items-center gap-1 uppercase tracking-wide whitespace-nowrap disabled:opacity-50"
                       >
                         <Trash2 className="w-4 h-4" />
                         Remove
@@ -331,13 +370,7 @@ export default function CartPage() {
                 <div className="space-y-3">
                   <Link
                     to="/checkout"
-                    className="w-full bg-[#8f1eae] text-white py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={(e) => {
-                      if (displayCart.items.length === 0) {
-                        e.preventDefault();
-                        alert('Your cart is empty!');
-                      }
-                    }}
+                    className="w-full bg-[#8f1eae] text-white py-3 font-inter font-medium hover:bg-[#7a1a99] transition-all duration-300 border border-[#8f1eae] rounded-[4px] uppercase text-sm tracking-wide flex items-center justify-center gap-2"
                   >
                     <span>Proceed to Checkout</span>
                     <ArrowRight className="w-4 h-4" />
@@ -345,8 +378,8 @@ export default function CartPage() {
                   
                   <button
                     onClick={handleClearCart}
+                    disabled={localCart.items.length === 0}
                     className="w-full border border-gray-300 text-gray-700 py-3 font-inter font-medium hover:bg-gray-50 hover:text-red-600 hover:border-red-600 transition-all duration-300 rounded-[4px] uppercase text-sm tracking-wide flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={displayCart.items.length === 0}
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Clear Cart</span>
