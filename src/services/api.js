@@ -39,7 +39,7 @@ class ApiService {
 
     // Configure fetch with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 15 second timeout
 
     try {
       console.log('🌐 Making request to:', url);
