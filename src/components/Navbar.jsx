@@ -1,10 +1,24 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from '../context/AuthContext';
 import { Search, X, ShoppingBag, User, Menu, ChevronRight } from "lucide-react";
 import apiService from '../services/api';
 
+// Debounce hook for search
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  
+  return debouncedValue;
+};
 
 const EscapeHandler = ({ isOpen, onClose }) => {
   useEffect(() => {
@@ -23,21 +37,109 @@ const EscapeHandler = ({ isOpen, onClose }) => {
   return null;
 };
 
-// Search Suggestions Component
+// Helper function for fuzzy matching
+const normalizeText = (text) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .trim();
+};
+
+// Helper function for typo tolerance (simple version)
+const getTypoTolerantQuery = (query) => {
+  const commonTypos = {
+    'lenevo': 'lenovo',
+    'leneovo': 'lenovo',
+    'delll': 'dell',
+    'hp pavillion': 'hp pavilion',
+    'assus': 'asus',
+    'macbok': 'macbook',
+    'mackbook': 'macbook',
+    'thinkpad': 'thinkpad',
+    'think pad': 'thinkpad',
+    'i-5': 'i5',
+    'i 5': 'i5',
+    'i-7': 'i7',
+    'i 7': 'i7',
+    'ryzen5': 'ryzen 5',
+    'ryzen7': 'ryzen 7',
+    '8 gb': '8gb',
+    '16 gb': '16gb',
+    '256 gb': '256gb',
+    '512 gb': '512gb',
+    '1 tb': '1tb'
+  };
+  
+  const normalized = normalizeText(query);
+  return commonTypos[normalized] || normalized;
+};
+
+// Helper function to calculate similarity score (for fuzzy matching)
+const calculateSimilarity = (str1, str2) => {
+  const s1 = normalizeText(str1);
+  const s2 = normalizeText(str2);
+  
+  if (s1.includes(s2) || s2.includes(s1)) return 1;
+  
+  // Simple Levenshtein distance approximation
+  if (s1.length === 0 || s2.length === 0) return 0;
+  
+  let matches = 0;
+  for (let i = 0; i < Math.min(s1.length, s2.length); i++) {
+    if (s1[i] === s2[i]) matches++;
+  }
+  
+  return matches / Math.max(s1.length, s2.length);
+};
+
+// Search Suggestions Component with grouped results
 const SearchSuggestions = ({ 
   suggestions, 
   onSuggestionClick, 
   onClose, 
-  isLoading 
+  isLoading,
+  query
 }) => {
+  if (suggestions.length === 0 && !isLoading && query) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 shadow-lg z-50 overflow-hidden"
+      >
+        <div className="p-4 text-center">
+          <p className="text-sm font-light text-gray-600 mb-2">
+            No results for "{query}"
+          </p>
+          <div className="text-xs text-gray-500 space-y-1">
+            <p>Did you mean:</p>
+            <p className="font-medium">• Try "MacBook" instead of "macbok"</p>
+            <p className="font-medium">• Try "i5" instead of "i-5"</p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   if (suggestions.length === 0 && !isLoading) return null;
+
+  const groupedSuggestions = suggestions.reduce((acc, suggestion) => {
+    const type = suggestion.type || 'products';
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(suggestion);
+    return acc;
+  }, {});
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 z-50 overflow-hidden"
+      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 shadow-lg z-50 max-h-96 overflow-hidden"
     >
       {isLoading ? (
         <div className="p-4 text-center">
@@ -45,30 +147,62 @@ const SearchSuggestions = ({
           <span className="ml-2 text-sm font-light text-gray-600">Loading suggestions...</span>
         </div>
       ) : (
-        <>
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-            <p className="text-xs font-normal text-gray-600 uppercase tracking-wider font-inter">
-              Search Suggestions
-            </p>
-          </div>
-          <div className="max-h-64 overflow-y-auto">
-            {suggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => onSuggestionClick(suggestion)}
-                className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100 last:border-b-0 group"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Search className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-900 font-light font-roboto">{suggestion}</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </>
+        <div className="overflow-y-auto max-h-96">
+          {Object.entries(groupedSuggestions).map(([type, items]) => (
+            <div key={type} className="border-b border-gray-100 last:border-b-0">
+              <div className="px-4 py-2 bg-gray-50">
+                <p className="text-xs font-medium text-gray-600 uppercase tracking-wider font-inter">
+                  {type === 'products' ? 'Products' : 
+                   type === 'brands' ? 'Brands' : 
+                   type === 'categories' ? 'Categories' : 
+                   type.charAt(0).toUpperCase() + type.slice(1)}
+                </p>
+              </div>
+              <div>
+                {items.map((suggestion, index) => (
+                  <button
+                    key={`${type}-${index}`}
+                    onClick={() => onSuggestionClick(suggestion.text || suggestion.name)}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100 last:border-b-0 group flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Search className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <span className="text-sm text-gray-900 font-normal font-roboto block">
+                          {suggestion.text || suggestion.name}
+                        </span>
+                        {suggestion.subtitle && (
+                          <span className="text-xs text-gray-500 font-light font-roboto">
+                            {suggestion.subtitle}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          
+          {/* Quick tips section */}
+          {query && query.length >= 2 && (
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+              <p className="text-xs text-gray-500 mb-1">Search tips:</p>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs px-2 py-1 bg-white border border-gray-300 rounded text-gray-600">
+                  Try {query} 8GB
+                </span>
+                <span className="text-xs px-2 py-1 bg-white border border-gray-300 rounded text-gray-600">
+                  {query} i5
+                </span>
+                <span className="text-xs px-2 py-1 bg-white border border-gray-300 rounded text-gray-600">
+                  {query} 256GB
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </motion.div>
   );
@@ -88,6 +222,11 @@ export default function Navbar({ cartItemsCount }) {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const searchInputRef = useRef(null);
   const searchContainerRef = useRef(null);
+  
+  // Keyboard navigation for suggestions
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Handle scroll effect
   useEffect(() => {
@@ -106,6 +245,7 @@ export default function Navbar({ cartItemsCount }) {
         !searchContainerRef.current.contains(event.target)
       ) {
         setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
       }
     };
 
@@ -113,84 +253,188 @@ export default function Navbar({ cartItemsCount }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch search suggestions
-  // Fetch search suggestions
-const fetchSuggestions = async (query) => {
-  if (!query.trim()) {
-    setSuggestions([]);
-    return;
-  }
-
-  setIsLoadingSuggestions(true);
-  try {
-    // ✅ CORRECT: Use apiService directly
-    const productsData = await apiService.getProducts();
-    const products = Array.isArray(productsData) ? productsData : 
-                     productsData?.data || productsData?.products || [];
-    
-    if (!Array.isArray(products) || products.length === 0) {
+  // Enhanced search suggestion generation
+  const generateSearchSuggestions = useCallback(async (query) => {
+    if (!query.trim() || query.length < 2) {
       setSuggestions([]);
       return;
     }
+
+    setIsLoadingSuggestions(true);
     
-    // Generate suggestions based on query
-    const generatedSuggestions = [];
-    const queryLower = query.toLowerCase();
-    
-    // Add product names
-    products.forEach(product => {
-      if (product.name && product.name.toLowerCase().includes(queryLower)) {
-        generatedSuggestions.push(product.name);
+    try {
+      // Fetch products
+      const productsData = await apiService.getProducts();
+      const products = Array.isArray(productsData) ? productsData : 
+                       productsData?.data || productsData?.products || [];
+      
+      if (!Array.isArray(products) || products.length === 0) {
+        setSuggestions([]);
+        return;
       }
-    });
-    
-    // Add brands
-    const brands = [...new Set(products.map(p => p.brand).filter(Boolean))];
-    brands.forEach(brand => {
-      if (brand.toLowerCase().includes(queryLower)) {
-        generatedSuggestions.push(`${brand} Laptops`);
-      }
-    });
-    
-    // Add processor suggestions
-    const processors = ['i3', 'i5', 'i7', 'i9', 'Ryzen 3', 'Ryzen 5', 'Ryzen 7', 'M1', 'M2', 'M3'];
-    processors.forEach(processor => {
-      if (processor.toLowerCase().includes(queryLower)) {
-        generatedSuggestions.push(`Laptops with ${processor}`);
-      }
-    });
-    
-    // Add RAM suggestions
-    const rams = ['8GB RAM', '16GB RAM', '32GB RAM'];
-    rams.forEach(ram => {
-      if (ram.toLowerCase().includes(queryLower)) {
-        generatedSuggestions.push(`${ram} Laptops`);
-      }
-    });
-    
-    // Remove duplicates and limit to 8 suggestions
-    const uniqueSuggestions = [...new Set(generatedSuggestions)].slice(0, 8);
-    setSuggestions(uniqueSuggestions);
-    
-  } catch (error) {
-    console.error('Error fetching suggestions:', error);
-    setSuggestions([]);
-  } finally {
-    setIsLoadingSuggestions(false);
-  }
-};
+      
+      const queryLower = normalizeText(query);
+      const typoTolerantQuery = getTypoTolerantQuery(query);
+      
+      // Prepare all searchable data
+      const allData = [];
+      
+      // Add products with their searchable fields
+      products.forEach(product => {
+        if (product.name) {
+          allData.push({
+            text: product.name,
+            type: 'products',
+            searchable: normalizeText(product.name + ' ' + product.brand + ' ' + (product.category || '') + ' ' + (product.specs?.join(' ') || '')),
+            subtitle: `${product.brand} • ₹${product.price}`
+          });
+        }
+      });
+      
+      // Extract unique brands
+      const brands = [...new Set(products.map(p => p.brand).filter(Boolean))];
+      brands.forEach(brand => {
+        allData.push({
+          text: brand,
+          type: 'brands',
+          searchable: normalizeText(brand)
+        });
+      });
+      
+      // Extract unique categories
+      const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+      categories.forEach(category => {
+        allData.push({
+          text: category,
+          type: 'categories',
+          searchable: normalizeText(category)
+        });
+      });
+      
+      // Add common specifications as suggestions
+      const commonSpecs = [
+        { text: '8GB RAM Laptops', type: 'specs', searchable: '8gb ram' },
+        { text: '16GB RAM Laptops', type: 'specs', searchable: '16gb ram' },
+        { text: '256GB SSD Laptops', type: 'specs', searchable: '256gb ssd' },
+        { text: '512GB SSD Laptops', type: 'specs', searchable: '512gb ssd' },
+        { text: '1TB SSD Laptops', type: 'specs', searchable: '1tb ssd' },
+        { text: 'Touchscreen Laptops', type: 'specs', searchable: 'touchscreen' },
+        { text: '2-in-1 Laptops', type: 'specs', searchable: '2 in 1 convertible' },
+        { text: 'Gaming Laptops', type: 'specs', searchable: 'gaming' }
+      ];
+      
+      commonSpecs.forEach(spec => {
+        allData.push(spec);
+      });
+      
+      // Add processor suggestions
+      const processors = [
+        { text: 'i3 Laptops', searchable: 'i3' },
+        { text: 'i5 Laptops', searchable: 'i5' },
+        { text: 'i7 Laptops', searchable: 'i7' },
+        { text: 'i9 Laptops', searchable: 'i9' },
+        { text: 'Ryzen 3 Laptops', searchable: 'ryzen 3' },
+        { text: 'Ryzen 5 Laptops', searchable: 'ryzen 5' },
+        { text: 'Ryzen 7 Laptops', searchable: 'ryzen 7' },
+        { text: 'M1 Laptops', searchable: 'm1' },
+        { text: 'M2 Laptops', searchable: 'm2' },
+        { text: 'M3 Laptops', searchable: 'm3' }
+      ];
+      
+      processors.forEach(proc => {
+        allData.push({
+          text: proc.text,
+          type: 'processors',
+          searchable: normalizeText(proc.searchable)
+        });
+      });
+      
+      // Score and filter suggestions
+      const scoredSuggestions = allData.map(item => {
+        let score = 0;
+        
+        // Check if searchable text contains query (partial match)
+        if (item.searchable.includes(queryLower)) {
+          score += 100;
+        }
+        
+        // Check typo-tolerant query
+        if (item.searchable.includes(typoTolerantQuery) && typoTolerantQuery !== queryLower) {
+          score += 80;
+        }
+        
+        // Check for multi-word matches (words in any order)
+        const queryWords = queryLower.split(' ').filter(word => word.length >= 2);
+        const searchableWords = item.searchable.split(' ');
+        
+        queryWords.forEach(queryWord => {
+          searchableWords.forEach(searchableWord => {
+            if (searchableWord.includes(queryWord)) {
+              score += 30;
+            }
+          });
+        });
+        
+        // Fuzzy matching for typos
+        if (calculateSimilarity(item.searchable, queryLower) > 0.7) {
+          score += 50;
+        }
+        
+        // Exact brand match gets higher score
+        if (item.type === 'brands' && normalizeText(item.text) === queryLower) {
+          score += 150;
+        }
+        
+        // Exact product name match gets highest score
+        if (item.type === 'products') {
+          const productNameWords = normalizeText(item.text).split(' ');
+          const hasAllQueryWords = queryWords.every(qw => 
+            productNameWords.some(pw => pw.includes(qw))
+          );
+          if (hasAllQueryWords) {
+            score += 200;
+          }
+        }
+        
+        return { ...item, score };
+      });
+      
+      // Filter and sort suggestions
+      const filteredSuggestions = scoredSuggestions
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      
+      setSuggestions(filteredSuggestions);
+      
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+      setSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, []);
+
+  // Effect to generate suggestions when query changes
+  useEffect(() => {
+    if (debouncedSearchQuery && showSuggestions) {
+      generateSearchSuggestions(debouncedSearchQuery);
+    } else {
+      setSuggestions([]);
+    }
+  }, [debouncedSearchQuery, showSuggestions, generateSearchSuggestions]);
 
   // Handle search input change
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
+    setSelectedSuggestionIndex(-1);
     
-    if (value.trim()) {
-      fetchSuggestions(value);
+    if (value.trim() && value.length >= 2) {
       setShowSuggestions(true);
     } else {
-      setSuggestions([]);
       setShowSuggestions(false);
+      setSuggestions([]);
     }
   };
 
@@ -198,21 +442,28 @@ const fetchSuggestions = async (query) => {
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
     
-    if (!searchQuery.trim()) return;
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return;
     
-    if (location.pathname === '/shop') {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
+    // Navigate to shop with search query
+    navigate(`/shop?search=${encodeURIComponent(trimmedQuery)}`);
     
     setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    // Blur input on submit
+    if (searchInputRef.current) {
+      searchInputRef.current.blur();
+    }
   };
 
   // Handle suggestion click
   const handleSuggestionClick = (suggestion) => {
     setSearchQuery(suggestion);
     setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    // Navigate to shop with the selected suggestion
     navigate(`/shop?search=${encodeURIComponent(suggestion.trim())}`);
   };
 
@@ -221,6 +472,7 @@ const fetchSuggestions = async (query) => {
     setSearchQuery("");
     setSuggestions([]);
     setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
     
     if (location.pathname === '/shop') {
       navigate('/shop');
@@ -231,12 +483,55 @@ const fetchSuggestions = async (query) => {
     }
   };
 
-  // Handle key events
+  // Enhanced keyboard navigation for suggestions
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSearchSubmit();
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
+    switch (e.key) {
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+          // Use the selected suggestion
+          handleSuggestionClick(suggestions[selectedSuggestionIndex].text || suggestions[selectedSuggestionIndex].name);
+        } else {
+          // Submit the current query
+          handleSearchSubmit();
+        }
+        break;
+        
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        if (searchInputRef.current) {
+          searchInputRef.current.blur();
+        }
+        break;
+        
+      case 'ArrowDown':
+        e.preventDefault();
+        if (showSuggestions && suggestions.length > 0) {
+          setSelectedSuggestionIndex(prev => 
+            prev < suggestions.length - 1 ? prev + 1 : 0
+          );
+        }
+        break;
+        
+      case 'ArrowUp':
+        e.preventDefault();
+        if (showSuggestions && suggestions.length > 0) {
+          setSelectedSuggestionIndex(prev => 
+            prev > 0 ? prev - 1 : suggestions.length - 1
+          );
+        }
+        break;
+        
+      default:
+        break;
+    }
+  };
+
+  // Handle search input focus
+  const handleSearchFocus = () => {
+    if (searchQuery.trim() && searchQuery.length >= 2) {
+      setShowSuggestions(true);
     }
   };
 
@@ -337,9 +632,9 @@ const fetchSuggestions = async (query) => {
                       value={searchQuery}
                       onChange={handleSearchChange}
                       onKeyDown={handleKeyDown}
-                      onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
-                      placeholder="Search laptops, brands, specs..."
-                      className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] focus:ring-1 focus:ring-[#8f1eae] text-gray-900 placeholder-gray-500 font-light font-roboto bg-white"
+                      onFocus={handleSearchFocus}
+                      placeholder="Search laptops, brands, specs (e.g., dell i5 8gb, lenovo thinkpad)..."
+                      className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#8f1eae] focus:ring-2 focus:ring-[#8f1eae] focus:ring-opacity-20 text-gray-900 placeholder-gray-500 font-normal font-roboto bg-white shadow-sm"
                     />
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     
@@ -365,8 +660,12 @@ const fetchSuggestions = async (query) => {
                     <SearchSuggestions
                       suggestions={suggestions}
                       onSuggestionClick={handleSuggestionClick}
-                      onClose={() => setShowSuggestions(false)}
+                      onClose={() => {
+                        setShowSuggestions(false);
+                        setSelectedSuggestionIndex(-1);
+                      }}
                       isLoading={isLoadingSuggestions}
+                      query={searchQuery}
                     />
                   )}
                 </AnimatePresence>
@@ -479,9 +778,9 @@ const fetchSuggestions = async (query) => {
                     value={searchQuery}
                     onChange={handleSearchChange}
                     onKeyDown={handleKeyDown}
-                    onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                    onFocus={handleSearchFocus}
                     placeholder="Search laptops, brands, specs..."
-                    className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#8f1eae] focus:ring-1 focus:ring-[#8f1eae] text-gray-900 placeholder-gray-500 font-light font-roboto bg-white"
+                    className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#8f1eae] focus:ring-2 focus:ring-[#8f1eae] focus:ring-opacity-20 text-gray-900 placeholder-gray-500 font-normal font-roboto bg-white shadow-sm"
                   />
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   
@@ -507,8 +806,12 @@ const fetchSuggestions = async (query) => {
                   <SearchSuggestions
                     suggestions={suggestions}
                     onSuggestionClick={handleSuggestionClick}
-                    onClose={() => setShowSuggestions(false)}
+                    onClose={() => {
+                      setShowSuggestions(false);
+                      setSelectedSuggestionIndex(-1);
+                    }}
                     isLoading={isLoadingSuggestions}
+                    query={searchQuery}
                   />
                 )}
               </AnimatePresence>
