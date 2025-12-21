@@ -72,6 +72,17 @@ const normalizeBrandName = (brand) => {
   return (brand || '').toLowerCase().trim();
 };
 
+// Helper function to normalize search text (same as Navbar)
+const normalizeText = (text) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 // Get product ID
 const getProductId = (product) => {
   return product.id || product._id;
@@ -505,24 +516,102 @@ export default function ShopPage() {
   const location = useLocation();
   const { addToCart } = useAuth();
   
-  // Read URL parameters
+  // Read URL parameters - CRITICAL: Sync with Navbar search
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const urlSearch = searchParams.get('search');
-  const urlCategory = searchParams.get('category');
+  const urlSearch = searchParams.get('search') || "";
+  const urlCategory = searchParams.get('category') || "";
+  const urlMinPrice = searchParams.get('minPrice');
+  const urlMaxPrice = searchParams.get('maxPrice');
+  const urlSort = searchParams.get('sort');
   
-  // State
+  // State - Initialize from URL parameters
   const [products, setProducts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState(urlSearch || "");
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [selectedBrands, setSelectedBrands] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 100000]);
-  const [sortBy, setSortBy] = useState("featured");
+  const [priceRange, setPriceRange] = useState([
+    urlMinPrice ? parseInt(urlMinPrice) : 0,
+    urlMaxPrice ? parseInt(urlMaxPrice) : 100000
+  ]);
+  const [sortBy, setSortBy] = useState(urlSort || "featured");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState({ message: "", isVisible: false });
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [availableBrands, setAvailableBrands] = useState([]);
 
-  // Initial fetch with caching
+  // 🔥 CRITICAL FIX 1: Sync URL parameters with component state
+  useEffect(() => {
+    // Update search query from URL (when Navbar search is used)
+    if (urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+    
+    // Update price range from URL
+    const newMin = urlMinPrice ? parseInt(urlMinPrice) : 0;
+    const newMax = urlMaxPrice ? parseInt(urlMaxPrice) : 100000;
+    if (newMin !== priceRange[0] || newMax !== priceRange[1]) {
+      setPriceRange([newMin, newMax]);
+    }
+    
+    // Update sort from URL
+    if (urlSort && urlSort !== sortBy) {
+      setSortBy(urlSort);
+    }
+  }, [urlSearch, urlMinPrice, urlMaxPrice, urlSort]);
+
+  // 🔥 CRITICAL FIX 2: Sync category from URL
+  useEffect(() => {
+    if (urlCategory && availableBrands.length > 0) {
+      const normalizedCategory = normalizeBrandName(urlCategory);
+      const matchingBrand = availableBrands.find(brand => 
+        normalizeBrandName(brand) === normalizedCategory
+      );
+      
+      if (matchingBrand && !selectedBrands.includes(normalizedCategory)) {
+        setSelectedBrands([normalizedCategory]);
+      }
+    }
+  }, [urlCategory, availableBrands]);
+
+  // 🔥 CRITICAL FIX 3: Update URL when any filter changes
+  const updateURL = useCallback((filters) => {
+    const params = new URLSearchParams();
+    
+    if (filters.searchQuery?.trim()) {
+      params.set('search', filters.searchQuery.trim());
+    }
+    
+    if (filters.selectedBrands?.length === 1) {
+      params.set('category', filters.selectedBrands[0]);
+    } else if (filters.selectedBrands?.length > 1) {
+      // For multiple brands, we don't set category in URL
+      params.delete('category');
+    } else {
+      params.delete('category');
+    }
+    
+    if (filters.priceRange[0] > 0) {
+      params.set('minPrice', filters.priceRange[0].toString());
+    } else {
+      params.delete('minPrice');
+    }
+    
+    if (filters.priceRange[1] < 100000) {
+      params.set('maxPrice', filters.priceRange[1].toString());
+    } else {
+      params.delete('maxPrice');
+    }
+    
+    if (filters.sortBy && filters.sortBy !== "featured") {
+      params.set('sort', filters.sortBy);
+    } else {
+      params.delete('sort');
+    }
+    
+    navigate(`?${params.toString()}`, { replace: true });
+  }, [navigate]);
+
+  // Fetch products with caching
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -534,7 +623,7 @@ export default function ShopPage() {
         
         if (cachedData) {
           const { data, timestamp } = JSON.parse(cachedData);
-          const isCacheValid = Date.now() - timestamp < 5 * 60 * 1000; // 5 minutes
+          const isCacheValid = Date.now() - timestamp < 5 * 60 * 1000;
           
           if (isCacheValid && data && data.length > 0) {
             console.log('📦 Using cached products');
@@ -578,11 +667,6 @@ export default function ShopPage() {
     };
 
     fetchProducts();
-
-    // Cleanup function
-    return () => {
-      // Cleanup if needed
-    };
   }, []);
 
   const processProducts = (productsData) => {
@@ -599,90 +683,29 @@ export default function ShopPage() {
     setAvailableBrands(brands);
   };
 
-  // Handle URL category parameter
-  useEffect(() => {
-    if (urlCategory && availableBrands.length > 0) {
-      const normalizedCategory = normalizeBrandName(urlCategory);
-      const matchingBrand = availableBrands.find(brand => 
-        normalizeBrandName(brand) === normalizedCategory
-      );
-      
-      if (matchingBrand && !selectedBrands.includes(normalizedCategory)) {
-        setSelectedBrands([normalizedCategory]);
-      }
-    }
-  }, [urlCategory, availableBrands]);
-
-  // Filter and sort products - Optimized with useMemo
-  const filteredProducts = useMemo(() => {
-    if (!products.length) return [];
-
-    let results = [...products];
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      results = results.filter(product => {
-        const searchString = [
-          product.name,
-          product.brand,
-          product.description,
-          ...(product.specs || [])
-        ].join(' ').toLowerCase();
-        return searchString.includes(query);
-      });
-    }
-
-    // Apply brand filter
-    if (selectedBrands.length > 0) {
-      results = results.filter(product => 
-        selectedBrands.includes(normalizeBrandName(product.brand))
-      );
-    }
-
-    // Apply price filter
-    results = results.filter(product => {
-      const price = Number(product.price) || 0;
-      return price >= priceRange[0] && price <= priceRange[1];
-    });
-
-    // Apply sorting
-    return results.sort((a, b) => {
-      const priceA = Number(a.price) || 0;
-      const priceB = Number(b.price) || 0;
-      
-      switch(sortBy) {
-        case "price-low": return priceA - priceB;
-        case "price-high": return priceB - priceA;
-        case "name-asc": return (a.name || '').localeCompare(b.name || '');
-        case "name-desc": return (b.name || '').localeCompare(a.name || '');
-        default: return 0;
-      }
-    });
-  }, [products, searchQuery, selectedBrands, priceRange, sortBy]);
-
-  // Memoized handlers
+  // 🔥 CRITICAL FIX 4: Handle search from both Navbar and shop page
   const handleShopSearchChange = useCallback((value) => {
     setSearchQuery(value);
-    
-    const params = new URLSearchParams(location.search);
-    if (value.trim()) {
-      params.set('search', value.trim());
-    } else {
-      params.delete('search');
-    }
-    params.delete('category');
-    
-    navigate(`?${params.toString()}`, { replace: true });
-  }, [location.search, navigate]);
+    updateURL({ 
+      searchQuery: value, 
+      selectedBrands, 
+      priceRange,
+      sortBy 
+    });
+  }, [selectedBrands, priceRange, sortBy, updateURL]);
 
+  // 🔥 CRITICAL FIX 5: Clear search properly
   const handleClearShopSearch = useCallback(() => {
     setSearchQuery("");
-    const params = new URLSearchParams(location.search);
-    params.delete('search');
-    navigate(`?${params.toString()}`, { replace: true });
-  }, [location.search, navigate]);
+    updateURL({ 
+      searchQuery: "", 
+      selectedBrands, 
+      priceRange,
+      sortBy 
+    });
+  }, [selectedBrands, priceRange, sortBy, updateURL]);
 
+  // 🔥 CRITICAL FIX 6: Update brand filters with URL sync
   const toggleBrand = useCallback((brand) => {
     const normalizedBrand = normalizeBrandName(brand);
     setSelectedBrands(prev => {
@@ -690,18 +713,39 @@ export default function ShopPage() {
         ? prev.filter(b => b !== normalizedBrand) 
         : [...prev, normalizedBrand];
       
-      const params = new URLSearchParams(location.search);
-      if (newBrands.length === 1) {
-        params.set('category', newBrands[0]);
-      } else {
-        params.delete('category');
-      }
-      
-      navigate(`?${params.toString()}`, { replace: true });
+      updateURL({ 
+        searchQuery, 
+        selectedBrands: newBrands, 
+        priceRange,
+        sortBy 
+      });
       return newBrands;
     });
-  }, [location.search, navigate]);
+  }, [searchQuery, priceRange, sortBy, updateURL]);
 
+  // 🔥 CRITICAL FIX 7: Update price range with URL sync
+  const handlePriceRangeChange = useCallback((range) => {
+    setPriceRange(range);
+    updateURL({ 
+      searchQuery, 
+      selectedBrands, 
+      priceRange: range,
+      sortBy 
+    });
+  }, [searchQuery, selectedBrands, sortBy, updateURL]);
+
+  // 🔥 CRITICAL FIX 8: Update sort with URL sync
+  const handleSortChange = useCallback((value) => {
+    setSortBy(value);
+    updateURL({ 
+      searchQuery, 
+      selectedBrands, 
+      priceRange,
+      sortBy: value 
+    });
+  }, [searchQuery, selectedBrands, priceRange, updateURL]);
+
+  // Show notification
   const showNotification = useCallback((message) => {
     setNotification({ message, isVisible: true });
   }, []);
@@ -736,6 +780,7 @@ export default function ShopPage() {
     }
   }, [navigate]);
 
+  // 🔥 CRITICAL FIX 9: Reset all filters
   const resetAllFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedBrands([]);
@@ -750,6 +795,84 @@ export default function ShopPage() {
     localStorage.removeItem('shop_products_cache');
     setTimeout(() => setLoading(false), 100);
   }, []);
+
+  // 🔥 CRITICAL FIX 10: Enhanced filtering logic (same as Navbar)
+  const filteredProducts = useMemo(() => {
+    if (!products.length) return [];
+
+    let results = [...products];
+
+    // Apply search filter with enhanced matching
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const normalizedQuery = normalizeText(query);
+      
+      results = results.filter(product => {
+        // Create comprehensive search string
+        const searchString = [
+          product.name,
+          product.brand,
+          product.category,
+          product.description,
+          ...(product.specs || [])
+        ].join(' ').toLowerCase();
+        
+        const normalizedSearchString = normalizeText(searchString);
+        
+        // Exact match check
+        if (normalizedSearchString.includes(normalizedQuery)) {
+          return true;
+        }
+        
+        // Partial word matches (same as Navbar)
+        const queryWords = normalizedQuery.split(' ').filter(w => w.length >= 2);
+        if (queryWords.length > 0) {
+          return queryWords.some(word => normalizedSearchString.includes(word));
+        }
+        
+        // Single character search for brand initials
+        if (normalizedQuery.length === 1) {
+          return normalizedBrandName(product.brand).startsWith(normalizedQuery);
+        }
+        
+        return false;
+      });
+    }
+
+    // Apply brand filter
+    if (selectedBrands.length > 0) {
+      results = results.filter(product => 
+        selectedBrands.includes(normalizeBrandName(product.brand))
+      );
+    }
+
+    // Apply price filter
+    results = results.filter(product => {
+      const price = Number(product.price) || 0;
+      return price >= priceRange[0] && price <= priceRange[1];
+    });
+
+    // Apply sorting
+    return results.sort((a, b) => {
+      const priceA = Number(a.price) || 0;
+      const priceB = Number(b.price) || 0;
+      const nameA = (a.name || '').toLowerCase();
+      const nameB = (b.name || '').toLowerCase();
+      
+      switch(sortBy) {
+        case "price-low": return priceA - priceB;
+        case "price-high": return priceB - priceA;
+        case "name-asc": return nameA.localeCompare(nameB);
+        case "name-desc": return nameB.localeCompare(nameA);
+        default: 
+          // Featured: show discounted items first, then by price
+          const discountA = calculateDiscount(a.originalPrice, a.price);
+          const discountB = calculateDiscount(b.originalPrice, b.price);
+          if (discountA !== discountB) return discountB - discountA;
+          return priceA - priceB;
+      }
+    });
+  }, [products, searchQuery, selectedBrands, priceRange, sortBy]);
 
   // Calculate active filter count
   const activeFilterCount = useMemo(() => {
@@ -814,9 +937,9 @@ export default function ShopPage() {
                 selectedBrands={selectedBrands}
                 toggleBrand={toggleBrand}
                 priceRange={priceRange}
-                setPriceRange={setPriceRange}
+                setPriceRange={handlePriceRangeChange}
                 sortBy={sortBy}
-                setSortBy={setSortBy}
+                setSortBy={handleSortChange}
                 resetAllFilters={resetAllFilters}
                 availableBrands={availableBrands}
               />
@@ -828,11 +951,11 @@ export default function ShopPage() {
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 p-6 bg-white rounded-lg border border-gray-200">
                 <div>
                   <h2 className="text-xl font-poppins font-semibold text-gray-900 mb-2 uppercase tracking-wider">
-                    {urlCategory 
+                    {searchQuery 
+                      ? `SEARCH: "${searchQuery}"` 
+                      : selectedBrands.length > 0
                       ? `${selectedBrands.map(b => b.charAt(0).toUpperCase() + b.slice(1)).join(', ')} LAPTOPS`
-                      : searchQuery 
-                        ? `SEARCH: "${searchQuery}"` 
-                        : 'ALL PRODUCTS'}
+                      : 'ALL PRODUCTS'}
                   </h2>
                   <p className="text-gray-600 text-sm font-roboto font-light">
                     {loading 
@@ -890,7 +1013,22 @@ export default function ShopPage() {
                           PRICE: ₹{priceRange[0].toLocaleString()} - ₹{priceRange[1].toLocaleString()}
                         </span>
                         <button
-                          onClick={() => setPriceRange([0, 100000])}
+                          onClick={() => handlePriceRangeChange([0, 100000])}
+                          className="text-gray-400 hover:text-gray-600 ml-1"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Sort */}
+                    {sortBy !== "featured" && (
+                      <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-200">
+                        <span className="text-sm text-gray-700 font-roboto font-light">
+                          SORT: {sortBy.replace('-', ' ').toUpperCase()}
+                        </span>
+                        <button
+                          onClick={() => handleSortChange("featured")}
                           className="text-gray-400 hover:text-gray-600 ml-1"
                         >
                           <X className="w-3 h-3" />
@@ -921,14 +1059,22 @@ export default function ShopPage() {
                       ? `WE COULDN'T FIND ANY PRODUCTS MATCHING "${searchQuery}".`
                       : "WE COULDN'T FIND ANY PRODUCTS AT THE MOMENT."}
                   </p>
-                  {activeFilterCount > 0 && (
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    {activeFilterCount > 0 && (
+                      <button
+                        onClick={resetAllFilters}
+                        className="bg-[#8f1eae] text-white px-6 py-3 rounded font-poppins font-medium text-sm uppercase tracking-wider hover:bg-[#7a1a99] transition-colors"
+                      >
+                        CLEAR ALL FILTERS
+                      </button>
+                    )}
                     <button
-                      onClick={resetAllFilters}
-                      className="bg-[#8f1eae] text-white px-6 py-3 rounded font-poppins font-medium text-sm uppercase tracking-wider hover:bg-[#7a1a99] transition-colors"
+                      onClick={() => navigate('/')}
+                      className="border border-gray-900 text-gray-900 px-6 py-3 rounded font-poppins font-medium text-sm uppercase tracking-wider hover:bg-black hover:text-white transition-colors"
                     >
-                      CLEAR ALL FILTERS
+                      RETURN TO HOME
                     </button>
-                  )}
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
