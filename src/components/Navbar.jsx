@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from '../context/AuthContext';
-import { Search, ShoppingBag, User, Menu, X } from "lucide-react";
+import { Search, ShoppingBag, User, X } from "lucide-react";
 import apiService from '../services/api';
 
 // Simplified debounce hook
@@ -29,9 +29,9 @@ const SearchSuggestions = ({
 }) => {
   if (suggestions.length === 0 && !isLoading && query) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 shadow-lg z-50 overflow-hidden">
+      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-100 shadow-sm z-50 overflow-hidden">
         <div className="p-4 text-center">
-          <p className="text-sm font-light text-gray-600">
+          <p className="text-sm text-gray-500">
             No results for "{query}"
           </p>
         </div>
@@ -43,27 +43,27 @@ const SearchSuggestions = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 shadow-lg z-50 max-h-96 overflow-hidden"
+      exit={{ opacity: 0, y: -5 }}
+      className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-100 shadow-sm z-50 max-h-80 overflow-hidden"
     >
       {isLoading ? (
         <div className="p-4 text-center">
-          <div className="inline-block w-5 h-5 border-2 border-gray-200 border-t-[#8f1eae] rounded-full animate-spin"></div>
-          <span className="ml-2 text-sm font-light text-gray-600">Loading...</span>
+          <div className="inline-block w-4 h-4 border-2 border-gray-200 border-t-[#8f1eae] rounded-full animate-spin"></div>
+          <span className="ml-2 text-sm text-gray-500">Loading...</span>
         </div>
       ) : (
-        <div className="overflow-y-auto max-h-96">
+        <div className="overflow-y-auto max-h-80">
           {suggestions.map((suggestion, index) => (
             <button
               key={index}
               onClick={() => onSuggestionClick(suggestion.text || suggestion.name)}
-              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100 last:border-b-0 flex items-center gap-3"
+              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-50 last:border-b-0 flex items-center gap-3"
             >
               <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="text-sm text-gray-900 font-normal block truncate">
+                <span className="text-sm text-gray-700 font-normal block truncate">
                   {suggestion.text || suggestion.name}
                 </span>
                 {suggestion.subtitle && (
@@ -331,16 +331,16 @@ export default function Navbar({ cartItemsCount = 0 }) {
                           setShowSuggestions(true);
                         }
                       }}
-                      placeholder="Search laptops, brands..."
-                      className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#8f1eae] focus:ring-2 focus:ring-[#8f1eae] focus:ring-opacity-20 text-gray-900 placeholder-gray-500 font-normal bg-white shadow-sm"
+                      placeholder="Search laptops, brands, specs..."
+                      className="w-full pl-12 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-300 focus:bg-gray-50 text-gray-700 placeholder-gray-400 font-normal bg-gray-50/50 hover:bg-gray-50 transition-all duration-200"
                     />
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                     
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={handleClearSearch}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 transition-colors"
                         aria-label="Clear search"
                       >
                         <X className="w-4 h-4" />
@@ -440,16 +440,16 @@ export default function Navbar({ cartItemsCount = 0 }) {
                       }
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder="Search laptops, brands..."
-                    className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#8f1eae] focus:ring-2 focus:ring-[#8f1eae] focus:ring-opacity-20 text-gray-900 placeholder-gray-500 font-normal bg-white shadow-sm"
+                    placeholder="Search laptops, brands, specs..."
+                    className="w-full pl-12 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-300 focus:bg-gray-50 text-gray-700 placeholder-gray-400 font-normal bg-gray-50/50 hover:bg-gray-50 transition-all duration-200"
                   />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                   
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={handleClearSearch}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 transition-colors"
                       aria-label="Clear search"
                     >
                       <X className="w-4 h-4" />
