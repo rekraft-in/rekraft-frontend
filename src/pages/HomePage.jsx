@@ -778,14 +778,14 @@ export default function HomePage() {
               {
                 title: "Buy Refurbished Laptops",
                 desc: "Discover carefully selected and professionally restored laptops from premium brands with full 2-year warranty and quality certification",
-                image: "https://drive.google.com/file/d/1i3fSfRVgxIWM_ia_D7YRaxeQjQ21kgrY/view",
+                image: "/images/buyl.png",
                 type: "shop",
                 features: ["2-Year Warranty", "Quality Certified", "Free Shipping"]
               },
               {
                 title: "Sell Your Laptop",
                 desc: "Get instant valuation, free doorstep pickup, and secure payment within 24 hours for your used laptop with transparent pricing",
-                image: "https://drive.google.com/file/d/13_FAoCQtq1PuUh2DLyWvfICdaVUZ9_8T/view",
+                image: "/images/sell.png",
                 type: "sell",
                 features: ["Instant Payment", "Free Pickup", "Secure Process"]
               },
