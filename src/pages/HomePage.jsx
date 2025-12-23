@@ -773,7 +773,7 @@ export default function HomePage() {
               {
                 title: "Buy Refurbished Laptops",
                 desc: "Discover carefully selected and professionally restored laptops from premium brands with full 2-year warranty and quality certification",
-                image: "/images/buyl.png",
+                image: "/images/buy.png",
                 type: "shop",
                 features: ["2-Year Warranty", "Quality Certified", "Free Shipping"]
               },
