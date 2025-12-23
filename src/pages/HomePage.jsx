@@ -780,7 +780,7 @@ export default function HomePage() {
                 desc: "Discover carefully selected and professionally restored laptops from premium brands with full 2-year warranty and quality certification",
                 image: "https://images.unsplash.com/photo-1580894908361-967195033215?auto=format&fit=crop&w=1200&q=80",
                 type: "shop",
-                features: ["1-Year Warranty", "Quality Certified", "Free Shipping"]
+                features: ["2-Year Warranty", "Quality Certified", "Free Shipping"]
               },
               {
                 title: "Sell Your Laptop",
