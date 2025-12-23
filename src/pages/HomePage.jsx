@@ -144,8 +144,8 @@ const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }) => {
                 </div>
                 <div className="text-sm">
                   <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">Warranty:</strong> 
-                  <span className="text-gray-600 font-light ml-2 font-roboto">{product.warranty || '1 Year Warranty'}</span>
-                </div>
+                  <span className="text-gray-600 font-light ml-2 font-roboto">{product.warranty || '2 Year Warranty'}</span>
+                </div>2
                 <div className="text-sm">
                   <strong className="text-gray-700 font-medium uppercase tracking-wide font-inter">Brand:</strong> 
                   <span className="text-gray-600 font-light ml-2 font-roboto">{product.brand || 'Unknown'}</span>
@@ -344,7 +344,7 @@ const TrustSection = () => (
         className="text-center mb-12"
       >
         <h3 className="text-2xl font-semibold text-gray-900 mb-4 tracking-wide uppercase font-poppins">Trusted & Certified Refurbished Laptops</h3>
-        <p className="text-gray-600 max-w-2xl mx-auto text-sm font-light font-roboto">Every device undergoes 50+ point quality testing and comes with comprehensive warranty</p>
+        <p className="text-gray-600 max-w-2xl mx-auto text-sm font-light font-roboto">Every device undergoes 50+ point quality testing and comes with comprehensive 2 year warranty</p>
       </motion.div>
       
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 items-center justify-items-center">
@@ -353,7 +353,7 @@ const TrustSection = () => (
           { icon: Star, text: "4.8/5 Rating" },
           { icon: Truck, text: "Free Shipping" },
           { icon: RotateCcw, text: "7-Day Returns" },
-          { icon: Award, text: "1Y Warranty" }
+          { icon: Award, text: "2Y Warranty" }
         ].map((item, index) => (
           <motion.div
             key={index}
@@ -510,7 +510,7 @@ const FAQSection = () => {
   const faqs = [
     {
       question: "Are refurbished laptops reliable for daily use?",
-      answer: "Absolutely! Each refurbished laptop undergoes 50+ rigorous quality checks, professional restoration, and comprehensive testing. We ensure every device performs like new and comes with a 1-year warranty for complete peace of mind."
+      answer: "Absolutely! Each refurbished laptop undergoes 50+ rigorous quality checks, professional restoration, and comprehensive testing. We ensure every device performs like new and comes with a 2-year warranty for complete peace of mind."
     },
     {
       question: "What is your return policy for refurbished laptops?",
@@ -522,7 +522,7 @@ const FAQSection = () => {
     },
     {
       question: "Do refurbished laptops come with warranty?",
-      answer: "Yes! All our refurbished laptops come with 1-year comprehensive warranty covering parts and labor. Extended warranty options are also available for additional protection."
+      answer: "Yes! All our refurbished laptops come with 2-year comprehensive warranty covering parts and labor. Extended warranty options are also available for additional protection."
     }
   ];
 
@@ -777,7 +777,7 @@ export default function HomePage() {
             {[
               {
                 title: "Buy Refurbished Laptops",
-                desc: "Discover carefully selected and professionally restored laptops from premium brands with full 1-year warranty and quality certification",
+                desc: "Discover carefully selected and professionally restored laptops from premium brands with full 2-year warranty and quality certification",
                 image: "https://images.unsplash.com/photo-1580894908361-967195033215?auto=format&fit=crop&w=1200&q=80",
                 type: "shop",
                 features: ["1-Year Warranty", "Quality Certified", "Free Shipping"]
@@ -895,7 +895,7 @@ export default function HomePage() {
                         {product.condition || 'Refurbished'}
                       </div>
                       <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 text-xs font-medium text-gray-700 rounded-full font-inter">
-                        {product.warranty || '1Y Warranty'}
+                        {product.warranty || '2Y Warranty'}
                       </div>
                     </div>
                     <div className="p-6">
