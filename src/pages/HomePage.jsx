@@ -272,8 +272,8 @@ const StatsSection = () => {
       let satisfaction = 0;
       
       const interval = setInterval(() => {
-        if (customers < 850) customers += 25;
-        if (products < 120) products += 2;
+        if (customers < 50) customers += 25;
+        if (products < 60) products += 2;
         if (satisfaction < 95) satisfaction += 1;
         
         setStats({ customers, products, satisfaction });
