@@ -778,7 +778,7 @@ export default function HomePage() {
               {
                 title: "Buy Refurbished Laptops",
                 desc: "Discover carefully selected and professionally restored laptops from premium brands with full 2-year warranty and quality certification",
-                image: "https://github.com/rekraft-in/rekraft-frontend/blob/main/public/images/buy.png-1580894908361-967195033215?auto=format&fit=crop&w=1200&q=80",
+                image: "/images/buyl.png",
                 type: "shop",
                 features: ["2-Year Warranty", "Quality Certified", "Free Shipping"]
               },
