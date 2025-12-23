@@ -352,7 +352,6 @@ const TrustSection = () => (
           { icon: Shield, text: "Secure Purchase" },
           { icon: Star, text: "4.8/5 Rating" },
           { icon: Truck, text: "Free Shipping" },
-          { icon: RotateCcw, text: "7-Day Returns" },
           { icon: Award, text: "2Y Warranty" }
         ].map((item, index) => (
           <motion.div
@@ -511,10 +510,6 @@ const FAQSection = () => {
     {
       question: "Are refurbished laptops reliable for daily use?",
       answer: "Absolutely! Each refurbished laptop undergoes 50+ rigorous quality checks, professional restoration, and comprehensive testing. We ensure every device performs like new and comes with a 2-year warranty for complete peace of mind."
-    },
-    {
-      question: "What is your return policy for refurbished laptops?",
-      answer: "We offer 7-day easy returns with free pickup service. If you're not completely satisfied with your refurbished laptop, we'll process a full refund - no questions asked."
     },
     {
       question: "How long does shipping take for refurbished laptops?",
