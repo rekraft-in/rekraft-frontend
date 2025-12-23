@@ -90,7 +90,7 @@ export default function Footer() {
                 },
                 { 
                   icon: "🛡️", 
-                  title: "1-Year Warranty", 
+                  title: "2-Year Warranty", 
                   description: "Comprehensive warranty covering parts and labor"
                 },
                 { 
