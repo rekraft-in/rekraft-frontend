@@ -84,11 +84,6 @@ export default function Footer() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
                 { 
-                  icon: "🔄", 
-                  title: "7-Day Returns", 
-                  description: "Easy returns within 7 days for complete satisfaction"
-                },
-                { 
                   icon: "🛡️", 
                   title: "2-Year Warranty", 
                   description: "Comprehensive warranty covering parts and labor"
