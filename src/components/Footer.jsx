@@ -89,9 +89,14 @@ export default function Footer() {
                   description: "Comprehensive warranty covering parts and labor"
                 },
                 { 
+                  icon: "⚡", 
+                  title: "Quick Diagnosis & Hassle-Free Claims", 
+                  description: "No hidden hoops, no lengthy back-and-forth."
+                },
+                { 
                   icon: "🚚", 
                   title: "Free Shipping", 
-                  description: "Free delivery on orders over ₹50,000 across India"
+                  description: "Free delivery all over India"
                 },
                 { 
                   icon: "🌱", 
