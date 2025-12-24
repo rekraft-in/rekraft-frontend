@@ -736,7 +736,7 @@ export default function HomePage() {
       {/* Simple Full Hero Banner */}
       <section className="w-full relative overflow-hidden">
         <img
-          src="/images/homepage.png"
+          src="/images/Black Purple Modern Website Design And Development Banner.png"
           alt="Rekraft Banner"
           className="w-full h-full object-cover"
           onError={(e) => {
