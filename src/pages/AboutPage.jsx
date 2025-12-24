@@ -136,8 +136,8 @@ export default function AboutPage() {
                 <div className="text-sm text-gray-600 uppercase tracking-wide font-inter font-medium">Shipping</div>
               </div>
               <div className="text-center px-8 py-4">
-                <div className="text-3xl font-light text-[#8f1eae] mb-2">24hr Customer</div>
-                <div className="text-sm text-gray-600 uppercase tracking-wide font-inter font-medium">Support</div>
+                <div className="text-3xl font-light text-[#8f1eae] mb-2">24Hr</div>
+                <div className="text-sm text-gray-600 uppercase tracking-wide font-inter font-medium">Customer Support</div>
               </div>
             </div>
           </motion.div>
