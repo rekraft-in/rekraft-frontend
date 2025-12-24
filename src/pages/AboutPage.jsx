@@ -41,26 +41,26 @@ export default function AboutPage() {
 
   const teamMembers = [
     {
-      name: "Aarav Sharma",
+      name: "Shreyash Shirsikar",
       role: "Founder & CEO",
       bio: "Former Apple engineer with 10+ years in device refurbishment",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"
     },
     {
-      name: "Priya Patel",
-      role: "Operations Director",
+      name: "Pranav Thormise",
+      role: "Operational Director & General Manager",
       bio: "Expert in sustainable supply chains and quality management",
       image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop"
     },
     {
-      name: "Rohan Verma",
+      name: "Atharv Bachhav",
       role: "Technical Head",
       bio: "Specialized in hardware testing and certification processes",
       image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop"
     },
     {
-      name: "Ananya Reddy",
-      role: "Customer Experience",
+      name: "Upasana Wagh",
+      role: "Data Analyst",
       bio: "Dedicated to ensuring exceptional post-purchase support",
       image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop"
     }
@@ -128,7 +128,7 @@ export default function AboutPage() {
                 <div className="text-sm text-gray-600 uppercase tracking-wide font-inter font-medium">Quality Checks</div>
               </div>
               <div className="text-center px-8 py-4">
-                <div className="text-3xl font-light text-[#8f1eae] mb-2">1-Year</div>
+                <div className="text-3xl font-light text-[#8f1eae] mb-2">2-Year</div>
                 <div className="text-sm text-gray-600 uppercase tracking-wide font-inter font-medium">Warranty</div>
               </div>
               <div className="text-center px-8 py-4">
@@ -136,8 +136,8 @@ export default function AboutPage() {
                 <div className="text-sm text-gray-600 uppercase tracking-wide font-inter font-medium">Shipping</div>
               </div>
               <div className="text-center px-8 py-4">
-                <div className="text-3xl font-light text-[#8f1eae] mb-2">7-Day</div>
-                <div className="text-sm text-gray-600 uppercase tracking-wide font-inter font-medium">Returns</div>
+                <div className="text-3xl font-light text-[#8f1eae] mb-2">24hr Customer</div>
+                <div className="text-sm text-gray-600 uppercase tracking-wide font-inter font-medium">Support</div>
               </div>
             </div>
           </motion.div>
