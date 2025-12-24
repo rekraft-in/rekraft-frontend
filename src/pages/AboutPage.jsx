@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 
 export default function AboutPage() {
   const milestones = [
-    { year: "2020", title: "Founded", description: "Started with a vision to reduce e-waste" },
+    { year: "2025", title: "Founded", description: "Started with a vision to reduce e-waste" },
     { year: "2021", title: "First 1000 Devices", description: "Successfully refurbished and sold 1000 laptops" },
     { year: "2022", title: "Expansion", description: "Launched nationwide shipping across India" },
     { year: "2023", title: "Quality Certified", description: "Received ISO 9001 certification for quality processes" }
