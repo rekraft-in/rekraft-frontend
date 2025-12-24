@@ -158,7 +158,7 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-6">
                 <p className="text-gray-600 leading-relaxed font-lato font-light">
-                 Rekraft is more than a brand—it's a movement toward conscious technology consumption. We're challenging the 'new is better' narrative by proving that refurbished electronics can deliver equal performance, greater value, and positive environmental impact.
+                 Rekraft is more than a brand—it's a movement toward conscious technology consumption. We are challenging the 'new is better' narrative by proving that refurbished electronics can deliver equal performance, greater value, and positive environmental impact.
                 <p className="text-gray-600 leading-relaxed font-lato font-light">
                   Our approach combines rigorous refurbishment standards with sustainable practices. Each laptop undergoes extensive testing, professional restoration, and quality certification before earning the Rekraft Certified seal. This ensures you receive a device that performs like new, backed by our comprehensive warranty and support.
                 </p>
