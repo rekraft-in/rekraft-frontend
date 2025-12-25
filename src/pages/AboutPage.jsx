@@ -5,9 +5,9 @@ import Footer from "../components/Footer";
 
 export default function AboutPage() {
   const milestones = [
-    { year: "2025", title: "Founded", description: "Started with a vision to reduce e-waste" },
-    { year: "2021", title: "First 1000 Devices", description: "Successfully refurbished and sold 1000 laptops" },
-    { year: "2022", title: "Expansion", description: "Launched nationwide shipping across India" },
+    { title: "Our Foundation", description: "Started with a mission to make quality tech accessible to all" },
+    { title: "Building Trust", description: "Developed India's most rigorous refurbishment certification" },
+    { title: "Creating Impact", description: "Became the most trusted name in refurbished tech" },
     { year: "2023", title: "Quality Certified", description: "Received ISO 9001 certification for quality processes" }
   ];
 
