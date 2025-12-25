@@ -8,7 +8,7 @@ export default function AboutPage() {
     { title: "Our Foundation", description: "Started with a mission to make quality tech accessible to all" },
     { title: "Building Trust", description: "Developed India's most rigorous refurbishment certification" },
     { title: "Creating Impact", description: "Became the most trusted name in refurbished tech" },
-    { year: "2023", title: "Quality Certified", description: "Received ISO 9001 certification for quality processes" }
+    { title: "Leading Change", description: "Setting new standards for sustainable technology consumption" }
   ];
 
   const values = [
@@ -20,17 +20,17 @@ export default function AboutPage() {
     {
       icon: <Globe className="w-6 h-6" />,
       title: "Sustainability",
-      description: "Reducing e-waste and carbon footprint"
+      description: "Reducing e-waste by 85% vs buying new"
     },
     {
       icon: <Users className="w-6 h-6" />,
       title: "Customer Trust",
-      description: "Transparent processes and honest pricing"
+      description: "Transparent processes + 2-year warranty"
     },
     {
       icon: <TrendingUp className="w-6 h-6" />,
       title: "Value Creation",
-      description: "Premium technology at accessible prices"
+      description: "Premium technology at 40-70% lower cost"
     },
     {
       icon: <Award className="w-6 h-6" />,
@@ -43,25 +43,25 @@ export default function AboutPage() {
     {
       name: "Shreyash Shirsikar",
       role: "Founder & CEO",
-      bio: "Former Apple engineer with 10+ years in device refurbishment",
+      bio: "Leads vision, strategy, and sustainable innovation",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"
     },
     {
       name: "Pranav Thormise",
-      role: "Operational Director & General Manager",
-      bio: "Expert in sustainable supply chains and quality management",
+      role: "General Manager",
+      bio: "Manages daily operations and quality",
       image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop"
     },
     {
       name: "Atharv Bachhav",
       role: "Technical Head",
-      bio: "Specialized in hardware testing and certification processes",
+      bio: "Designs digital experiences and marketing visuals",
       image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop"
     },
     {
       name: "Upasana Wagh",
       role: "Data Analyst",
-      bio: "Dedicated to ensuring exceptional post-purchase support",
+      bio: "Drives decisions with metrics and trend insights",
       image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop"
     }
   ];
@@ -157,23 +157,23 @@ export default function AboutPage() {
                 About Rekraft
               </h2>
               <div className="space-y-6">
-  <p className="text-gray-600 leading-relaxed font-lato font-light">
-    Rekraft is more than a brand — it's a movement toward conscious technology consumption. 
-    We are challenging the 'new is better' narrative by proving that refurbished electronics 
+  <p className="text-gray-700 leading-relaxed font-lato font-light">
+    Rekraft is more than a brand—it's a movement toward conscious technology consumption. 
+    We're challenging the 'new is better' narrative by proving that refurbished electronics 
     can deliver equal performance, greater value, and positive environmental impact.
   </p>
 
-  <p className="text-gray-600 leading-relaxed font-lato font-light">
-    Our approach combines rigorous refurbishment standards with sustainable practices. 
-    Each laptop undergoes extensive testing, professional restoration, and quality 
-    certification before earning the Rekraft Certified seal. This ensures you receive 
-    a device that performs like new, backed by our comprehensive warranty and support.
+  <p className="text-gray-700 leading-relaxed font-lato font-light">
+    Our model creates triple value:<br />
+    • <strong>Financial accessibility</strong> - Premium tech at 40-70% lower cost<br />
+    • <strong>Performance assurance</strong> - Every device Rekraft Certified with warranty<br />
+    • <strong>Planetary responsibility</strong> - Each purchase prevents electronics from becoming toxic e-waste
   </p>
 
-  <p className="text-gray-600 leading-relaxed font-lato font-light">
-    Based in Bangalore and serving customers across India, we're committed to transforming 
-    the refurbished electronics market through transparency, quality assurance, and 
-    customer-centric service.
+  <p className="text-gray-700 leading-relaxed font-lato font-light">
+    We're building trust through transparency. From our detailed condition reports to our 
+    open refurbishment process, we're setting new standards in a sector ripe for change. 
+    For us, sustainability isn't a marketing term—it's our operational blueprint.
   </p>
 </div>
 
