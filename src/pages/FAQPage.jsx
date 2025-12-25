@@ -65,62 +65,7 @@ export default function FAQPage() {
         }
       ]
     },
-    {
-      id: 'shipping',
-      title: "Shipping & Delivery",
-      icon: Truck,
-      color: "from-[#3B82F6] to-[#1D4ED8]",
-      faqs: [
-        {
-          question: "What are your shipping options and delivery timelines?",
-          answer: "We offer free standard shipping (3-5 business days) across India. Express shipping (1-2 business days) is available for ₹299. All orders are processed within 24 hours with real-time tracking via SMS and email.",
-          tags: ["shipping", "delivery", "timeline"]
-        },
-        {
-          question: "Do you offer installation and setup assistance?",
-          answer: "Yes, we provide free remote setup assistance for all customers. Our technicians can help with initial setup, data transfer from old devices, software installation, and optimization. This service is available within 7 days of delivery.",
-          tags: ["setup", "installation", "assistance"]
-        },
-        {
-          question: "Can I track my order in real-time?",
-          answer: "Absolutely. Once your order ships, you'll receive tracking information via SMS and email. You can track your package in real-time through our website or the courier partner's app with live location updates.",
-          tags: ["tracking", "order", "updates"]
-        },
-        {
-          question: "What is your delivery coverage area?",
-          answer: "We deliver to 25,000+ pin codes across India including tier 2/3 cities. For remote locations, delivery may take 1-2 additional days. Contact us for specific location queries before ordering.",
-          tags: ["delivery", "coverage", "india"]
-        }
-      ]
-    },
-    {
-      id: 'returns',
-      title: "Returns & Refunds",
-      icon: "↩️",
-      color: "from-[#F59E0B] to-[#D97706]",
-      faqs: [
-        {
-          question: "What is your return policy for refurbished laptops?",
-          answer: "We offer a 7-day no-questions-asked return policy. If you're not satisfied, return the laptop in original condition for a full refund. After 7 days, our standard warranty applies for any technical issues.",
-          tags: ["return", "policy", "refund"]
-        },
-        {
-          question: "How long does refund processing take?",
-          answer: "Refunds are processed within 3-5 business days after we receive and inspect the returned device. Payment method refunds appear in 5-10 business days depending on your bank. COD orders are refunded via bank transfer.",
-          tags: ["refund", "processing", "timeline"]
-        },
-        {
-          question: "Are there any restocking fees?",
-          answer: "No restocking fees for returns within 7 days. We only deduct the original shipping charges if returning a non-defective product. For defective products or warranty claims, return shipping is completely free.",
-          tags: ["restocking", "fees", "charges"]
-        },
-        {
-          question: "Can I exchange my laptop for a different model?",
-          answer: "Yes, exchanges are available within 7 days of delivery. Contact our support team to arrange an exchange. The price difference will be adjusted, and we'll arrange free pickup for the original device.",
-          tags: ["exchange", "swap", "model"]
-        }
-      ]
-    },
+
     {
       id: 'technical',
       title: "Technical Questions",
