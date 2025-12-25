@@ -157,20 +157,20 @@ export default function AboutPage() {
                 About Rekraft
               </h2>
               <div className="space-y-6">
-  <p className="text-gray-600 leading-relaxed font-lato font-light">
+  <p className="text-gray-700 leading-relaxed font-lato font-light">
     Rekraft is more than a brand—it's a movement toward conscious technology consumption. 
-    We're challenging the 'new is better' narrative by proving that refurbished electronics can 
-    deliver equal performance, greater value, and positive environmental impact.
+    We're challenging the 'new is better' narrative by proving that refurbished electronics 
+    can deliver equal performance, greater value, and positive environmental impact.
   </p>
 
-  <p className="text-gray-600 leading-relaxed font-lato font-light">
-    Our model creates triple value:<br></br>
-    Financial accessibility - Premium tech at 40-70% lower cost
-    Performance assurance - Every device Rekraft Certified with warranty
-    Planetary responsibility - Each purchase prevents electronics from becoming toxic e-waste
+  <p className="text-gray-700 leading-relaxed font-lato font-light">
+    Our model creates triple value:<br />
+    • <strong>Financial accessibility</strong> - Premium tech at 40-70% lower cost<br />
+    • <strong>Performance assurance</strong> - Every device Rekraft Certified with warranty<br />
+    • <strong>Planetary responsibility</strong> - Each purchase prevents electronics from becoming toxic e-waste
   </p>
 
-  <p className="text-gray-600 leading-relaxed font-lato font-light">
+  <p className="text-gray-700 leading-relaxed font-lato font-light">
     We're building trust through transparency. From our detailed condition reports to our 
     open refurbishment process, we're setting new standards in a sector ripe for change. 
     For us, sustainability isn't a marketing term—it's our operational blueprint.
