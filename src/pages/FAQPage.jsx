@@ -95,7 +95,7 @@ export default function FAQPage() {
     },
     {
       id: 'technical',
-      title: "Technical Questions",
+      title: "Technical Que",
       icon: Laptop,
       color: "from-[#8B5CF6] to-[#7C3AED]",
       faqs: [
