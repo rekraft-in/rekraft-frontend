@@ -36,7 +36,7 @@ export default function SupportPage() {
     {
       id: 'warranty',
       icon: Shield,
-      title: "Warranty & Repair Support",
+      title: "Warranty & Support",
       subtitle: "Need help with a Rekraft-certified device?",
       features: [
         "Warranty claim assistance",
@@ -83,21 +83,6 @@ export default function SupportPage() {
       actionText: "Check Order Status",
       actionLink: "/orders",
       badge: "Track"
-    },
-    {
-      id: 'returns',
-      icon: RefreshCw,
-      title: "Returns & Replacement Support",
-      subtitle: "Device issues covered under return policy",
-      features: [
-        "7-day return assistance (DOA replacement)",
-        "Exchange request",
-        "Device not working on arrival",
-        "Part mismatch or quality concerns"
-      ],
-      actionText: "Request Return/Replacement",
-      actionLink: "/returns",
-      badge: "Replace"
     },
     {
       id: 'selling',
@@ -180,7 +165,7 @@ export default function SupportPage() {
   const deviceIssues = [
     {
       type: "Laptops",
-      common: ["Overheating", "Slow performance", "Keyboard/touchpad issues"],
+      common: ["Battery", "MotherBoard", "Keyboard/touchpad issues", "Speakers"],
       icon: Wrench
     }
   ];

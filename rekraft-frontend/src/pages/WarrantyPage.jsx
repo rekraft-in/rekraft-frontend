@@ -27,13 +27,13 @@ import {
 export default function WarrantyPage() {
   const stats = [
     { number: "2 Years", label: "Warranty Protection", icon: Shield },
-    { number: "40+", label: "Quality Checkpoints", icon: CheckCircle },
+    { number: "50+", label: "Quality Checkpoints", icon: CheckCircle },
     { number: "24-48 Hours", label: "Diagnosis Time", icon: Clock },
     { number: "OEM Grade", label: "Parts Quality", icon: Cpu }
   ];
 
   const coverageDetails = [
-    {
+    { 
       icon: Cpu,
       title: "Motherboard",
       description: "Non-physical issues covered",
