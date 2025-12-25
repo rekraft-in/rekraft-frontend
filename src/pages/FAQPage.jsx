@@ -98,7 +98,7 @@ const faqCategories = [
   },
   {
     id: 'technical',
-    title: "Technical",
+    title: "Technical Que",
     icon: Laptop,
     color: "from-[#8B5CF6] to-[#7C3AED]",
     shortDesc: "Specs, upgrades & setup",

@@ -42,7 +42,7 @@ export default function SupportPage() {
         "Warranty claim assistance",
         "Repair & replacement updates",
         "Free diagnostics during warranty",
-        "Priority service for Rekraft customers",
+        "Priority service queue",
         "Pickup & drop support (select locations)"
       ],
       actionText: "Start Your Warranty Claim",
@@ -368,7 +368,7 @@ export default function SupportPage() {
                     <div className="pl-14 border-t border-gray-300 pt-4">
                       <div className="mb-4">
                         <h4 className="font-inter font-medium text-gray-900 mb-2 text-xs uppercase tracking-wide">
-                          Full Service Details:
+                         Services Included:
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {section.features.map((feature, idx) => (
