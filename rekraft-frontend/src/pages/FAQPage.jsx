@@ -331,6 +331,13 @@ export default function FAQPage() {
                         <span className="text-xs font-inter font-medium text-[#8f1eae] bg-[#F5F2FA] px-3 py-1 rounded-[4px] uppercase tracking-wide">
                           {categoryTitle?.split(' ')[0]}
                         </span>
+                        <div className="flex gap-2">
+                          {faq.tags.slice(0, 2).map((tag, i) => (
+                            <span key={i} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-[4px] font-lato">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                       <h3 className="text-lg font-inter font-medium text-gray-900 group-hover:text-[#8f1eae] transition-colors leading-relaxed">
                         {faq.question}
