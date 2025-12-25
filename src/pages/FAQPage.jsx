@@ -50,7 +50,7 @@ export default function FAQPage() {
         },
         {
           question: "How do I claim warranty service?",
-          answer: "Contact our support team via phone (+91-9876543210), email (support@rekraft.in), or live chat. Provide your order ID and describe the issue. We offer doorstep pickup for warranty claims across India with 5-7 day turnaround for most repairs.",
+          answer: "Contact our support team via phone +91 93737 12701, email contactrekraft@gmail.com . Provide your order ID and describe the issue. We offer doorstep pickup for warranty claims across India with 5-7 day turnaround for most repairs.",
           tags: ["claim", "repair", "support"]
         },
         {
@@ -60,7 +60,7 @@ export default function FAQPage() {
         },
         {
           question: "What technical support is included?",
-          answer: "We provide comprehensive technical support including phone support (9AM-9PM daily), email support (24/7 response within 4 hours), live chat, remote assistance, and setup guidance. Support covers software issues, hardware troubleshooting, and optimization advice.",
+          answer: "We provide comprehensive technical support including phone support (9AM-9PM daily), email support (24/7 response within 24 hours), live chat, remote assistance, and setup guidance. Support covers software issues, hardware troubleshooting, and optimization advice.",
           tags: ["technical", "support", "help"]
         }
       ]
@@ -90,34 +90,6 @@ export default function FAQPage() {
           question: "What is your delivery coverage area?",
           answer: "We deliver to 25,000+ pin codes across India including tier 2/3 cities. For remote locations, delivery may take 1-2 additional days. Contact us for specific location queries before ordering.",
           tags: ["delivery", "coverage", "india"]
-        }
-      ]
-    },
-    {
-      id: 'returns',
-      title: "Returns & Refunds",
-      icon: "↩️",
-      color: "from-[#F59E0B] to-[#D97706]",
-      faqs: [
-        {
-          question: "What is your return policy for refurbished laptops?",
-          answer: "We offer a 7-day no-questions-asked return policy. If you're not satisfied, return the laptop in original condition for a full refund. After 7 days, our standard warranty applies for any technical issues.",
-          tags: ["return", "policy", "refund"]
-        },
-        {
-          question: "How long does refund processing take?",
-          answer: "Refunds are processed within 3-5 business days after we receive and inspect the returned device. Payment method refunds appear in 5-10 business days depending on your bank. COD orders are refunded via bank transfer.",
-          tags: ["refund", "processing", "timeline"]
-        },
-        {
-          question: "Are there any restocking fees?",
-          answer: "No restocking fees for returns within 7 days. We only deduct the original shipping charges if returning a non-defective product. For defective products or warranty claims, return shipping is completely free.",
-          tags: ["restocking", "fees", "charges"]
-        },
-        {
-          question: "Can I exchange my laptop for a different model?",
-          answer: "Yes, exchanges are available within 7 days of delivery. Contact our support team to arrange an exchange. The price difference will be adjusted, and we'll arrange free pickup for the original device.",
-          tags: ["exchange", "swap", "model"]
         }
       ]
     },
@@ -331,6 +303,13 @@ export default function FAQPage() {
                         <span className="text-xs font-inter font-medium text-[#8f1eae] bg-[#F5F2FA] px-3 py-1 rounded-[4px] uppercase tracking-wide">
                           {categoryTitle?.split(' ')[0]}
                         </span>
+                        <div className="flex gap-2">
+                          {faq.tags.slice(0, 2).map((tag, i) => (
+                            <span key={i} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-[4px] font-lato">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                       <h3 className="text-lg font-inter font-medium text-gray-900 group-hover:text-[#8f1eae] transition-colors leading-relaxed">
                         {faq.question}
