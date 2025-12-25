@@ -124,6 +124,35 @@ const faqCategories = [
         tags: ["data", "security", "privacy", "wiping"]
       }
     ]
+  },
+  {
+    id: 'technical',
+    title: "Technical Questions",
+    icon: Laptop,
+    color: "from-[#8B5CF6] to-[#7C3AED]",
+    shortDesc: "Specs, upgrades & setup",
+    faqs: [
+      {
+        question: "What operating system comes pre-installed?",
+        answer: "Windows laptops come with genuine Windows Pro; MacBooks with compatible macOS; Linux available on request.",
+        tags: ["os", "windows", "macos", "linux"]
+      },
+      {
+        question: "Can the RAM or storage be upgraded?",
+        answer: "Most laptops are upgradeable with customization options at purchase and post-purchase service.",
+        tags: ["upgrade", "ram", "storage", "ssd"]
+      },
+      {
+        question: "What about battery life and health?",
+        answer: "Batteries tested and replaced if below 80% health with certification showing cycle count and capacity.",
+        tags: ["battery", "health", "life"]
+      },
+      {
+        question: "Do you provide data wiping certification?",
+        answer: "Yes, secure data erasure certification provided ensuring complete removal of previous user data.",
+        tags: ["data", "security", "privacy", "wiping"]
+      }
+    ]
   }
 ];
 
