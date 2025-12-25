@@ -19,22 +19,18 @@ const faqCategories = [
       {
         question: "What quality checks do your refurbished laptops undergo?",
         answer: "Every Rekraft laptop undergoes 50+ comprehensive quality checks including hardware diagnostics, battery testing, screen assessment, and performance benchmarking.",
-        tags: ["quality", "testing", "refurbishment"]
       },
       {
         question: "Are the laptops genuinely refurbished or just used?",
         answer: "All laptops are professionally refurbished with component replacement, thorough cleaning, software reinstallation, and comprehensive testing.",
-        tags: ["refurbished", "certified", "process"]
       },
       {
         question: "Do you provide original accessories with the laptops?",
         answer: "Yes, each laptop comes with genuine charger, cables, and protective packaging - all tested for functionality.",
-        tags: ["accessories", "charger", "included"]
       },
       {
         question: "What brands of refurbished laptops do you offer?",
         answer: "We offer professionally refurbished laptops from leading brands including Apple MacBooks, Dell, HP, Lenovo, Microsoft Surface, ASUS, Samsung and Acer, each certified through our rigorous quality process.",
-        tags: ["brands", "apple", "dell", "hp"]
       }
     ]
   },
@@ -48,22 +44,18 @@ const faqCategories = [
       {
         question: "What warranty do you offer on refurbished laptops?",
         answer: "Comprehensive 1-year warranty covering parts and labor with free repairs and technical support included.",
-        tags: ["warranty", "coverage", "support"]
       },
       {
         question: "How do I claim warranty service?",
         answer: "Contact support via phone, email, or live chat for doorstep pickup with 5-7 day repair turnaround.",
-        tags: ["claim", "repair", "support"]
       },
       {
         question: "Does warranty cover accidental damage?",
         answer: "Standard warranty covers manufacturing defects; accidental damage protection available as optional Rekraft Care plans.",
-        tags: ["accidental", "damage", "protection"]
       },
       {
         question: "What technical support is included?",
         answer: "Phone, email, and live chat support with remote assistance and setup guidance available.",
-        tags: ["technical", "support", "help"]
       }
     ]
   },
@@ -77,22 +69,18 @@ const faqCategories = [
       {
         question: "What are your shipping options and delivery timelines?",
         answer: "Free standard shipping (3-5 days) with express options available; real-time tracking provided.",
-        tags: ["shipping", "delivery", "timeline"]
       },
       {
         question: "Do you offer installation and setup assistance?",
         answer: "Free remote setup assistance available for initial setup, data transfer, and software installation.",
-        tags: ["setup", "installation", "assistance"]
       },
       {
         question: "Can I track my order in real-time?",
         answer: "Yes, real-time tracking via SMS and email once your order ships.",
-        tags: ["tracking", "order", "updates"]
       },
       {
         question: "What is your delivery coverage area?",
         answer: "Delivery to 25,000+ pin codes across India including tier 2/3 cities.",
-        tags: ["delivery", "coverage", "india"]
       }
     ]
   },
@@ -106,22 +94,18 @@ const faqCategories = [
       {
         question: "What operating system comes pre-installed?",
         answer: "Windows laptops come with genuine Windows Pro; MacBooks with compatible macOS; Linux available on request.",
-        tags: ["os", "windows", "macos", "linux"]
       },
       {
         question: "Can the RAM or storage be upgraded?",
         answer: "Most laptops are upgradeable with customization options at purchase and post-purchase service.",
-        tags: ["upgrade", "ram", "storage", "ssd"]
       },
       {
         question: "What about battery life and health?",
         answer: "Batteries tested and replaced if below 80% health with certification showing cycle count and capacity.",
-        tags: ["battery", "health", "life"]
       },
       {
         question: "Do you provide data wiping certification?",
         answer: "Yes, secure data erasure certification provided ensuring complete removal of previous user data.",
-        tags: ["data", "security", "privacy", "wiping"]
       }
     ]
   }
@@ -135,14 +119,14 @@ const faqCategories = [
     ? allFaqs.filter(faq => 
         faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
         faq.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        faq.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        false
       )
     : faqCategories
         .find(cat => cat.id === activeCategory)
         ?.faqs.filter(faq => 
           faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
           faq.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          faq.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+          false
         ) || [];
 
   const supportOptions = [
@@ -307,13 +291,7 @@ const faqCategories = [
                         <span className="text-xs font-inter font-medium text-[#8f1eae] bg-[#F5F2FA] px-3 py-1 rounded-[4px] uppercase tracking-wide">
                           {categoryTitle?.split(' ')[0]}
                         </span>
-                        <div className="flex gap-2">
-                          {faq.tags.slice(0, 2).map((tag, i) => (
-                            <span key={i} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-[4px] font-lato">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
+                        
                       </div>
                       <h3 className="text-lg font-inter font-medium text-gray-900 group-hover:text-[#8f1eae] transition-colors leading-relaxed">
                         {faq.question}
