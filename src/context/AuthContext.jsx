@@ -1,0 +1,590 @@
+// src/context/AuthContext.js - COMPLETE FIXED VERSION
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import apiService from '../services/api';
+
+const AuthContext = createContext({});
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [cart, setCart] = useState({ items: [], totalPrice: 0 });
+  const [orders, setOrders] = useState([]);
+  const [addresses, setAddresses] = useState([]);
+  const [error, setError] = useState('');
+  const [cartLoading, setCartLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialize auth state from localStorage and fetch cart immediately
+  const initializeAuth = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (token && storedUser) {
+        console.log('🔍 Found stored auth data');
+        apiService.setToken(token);
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        console.log('✅ Auth initialized from localStorage:', userData.email);
+        
+        // CRITICAL FIX: Fetch cart immediately after auth initialization
+        await fetchCart();
+        
+        // Fetch other user data in background
+        setTimeout(() => {
+          fetchAddresses();
+          fetchOrders();
+        }, 500);
+      } else {
+        console.log('🔍 No stored auth data found');
+        setUser(null);
+        setCart({ items: [], totalPrice: 0 });
+      }
+    } catch (err) {
+      console.error('❌ Error initializing auth:', err);
+      clearAuthData();
+    } finally {
+      setLoading(false);
+      setInitialized(true);
+    }
+  }, []);
+
+  // Clear all auth data
+  const clearAuthData = () => {
+    console.log('🧹 Clearing auth data');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    apiService.clearToken();
+    setUser(null);
+    setCart({ items: [], totalPrice: 0 });
+    setOrders([]);
+    setAddresses([]);
+    setError('');
+  };
+
+  // Check user authentication status
+  const checkAuthStatus = useCallback(async () => {
+    if (!apiService.token) {
+      console.log('🔐 No token available');
+      return false;
+    }
+
+    try {
+      console.log('🔍 Checking auth status...');
+      const data = await apiService.getProfile();
+      
+      if (data.success && data.data) {
+        console.log('✅ User is authenticated:', data.data.email);
+        setUser(data.data);
+        localStorage.setItem('user', JSON.stringify(data.data));
+        
+        // Fetch cart after successful auth check
+        await fetchCart();
+        
+        return true;
+      } else {
+        console.log('❌ Auth check failed - invalid response');
+        clearAuthData();
+        return false;
+      }
+    } catch (error) {
+      console.log('❌ Auth check failed:', error.message);
+      if (error.message.includes('Unauthorized') || error.message.includes('401') || error.message.includes('Token')) {
+        clearAuthData();
+      }
+      return false;
+    }
+  }, []);
+
+  // Initialize on component mount
+  useEffect(() => {
+    if (!initialized) {
+      initializeAuth();
+    }
+  }, [initializeAuth, initialized]);
+
+  // ========== AUTH FUNCTIONS ==========
+  const register = async (name, email, password, phone) => {
+    setAuthLoading(true);
+    setError('');
+    
+    try {
+      console.log('📝 Starting registration for:', email);
+      const data = await apiService.register({ name, email, password, phone });
+
+      if (data.success) {
+        console.log('✅ Registration successful');
+        
+        // Auto-login after successful registration
+        const loginResult = await login(email, password);
+        if (loginResult.success) {
+          return { 
+            success: true, 
+            message: 'Registration successful! You are now logged in.' 
+          };
+        } else {
+          return loginResult;
+        }
+      } else {
+        const errorMsg = data.error || 'Registration failed. Please try again.';
+        setError(errorMsg);
+        return { 
+          success: false, 
+          error: errorMsg 
+        };
+      }
+    } catch (error) {
+      console.error('❌ Registration error:', error);
+      const errorMsg = error.message || 'Registration failed. Please try again.';
+      setError(errorMsg);
+      return { 
+        success: false, 
+        error: errorMsg 
+      };
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const login = async (email, password) => {
+    setAuthLoading(true);
+    setError('');
+    
+    try {
+      console.log('🔐 Attempting login for:', email);
+      const data = await apiService.login({ email, password });
+
+      if (data.success && data.data?.token) {
+        console.log('✅ Login successful');
+        
+        // Store user data
+        const userData = data.data;
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // CRITICAL FIX: Fetch cart immediately after login (no timeout)
+        await fetchCart();
+        
+        // Fetch other data in background
+        setTimeout(() => {
+          fetchAddresses();
+          fetchOrders();
+        }, 500);
+        
+        return { 
+          success: true, 
+          message: 'Login successful!',
+          data: userData 
+        };
+      } else {
+        const errorMsg = data.error || 'Login failed. Invalid credentials.';
+        setError(errorMsg);
+        return { 
+          success: false, 
+          error: errorMsg 
+        };
+      }
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      let errorMsg = error.message || 'Login failed. Please try again.';
+      
+      // User-friendly error messages
+      if (errorMsg.includes('Network error') || errorMsg.includes('Failed to fetch')) {
+        errorMsg = 'Network error. Please check your internet connection.';
+      } else if (errorMsg.includes('Invalid email or password')) {
+        errorMsg = 'Invalid email or password. Please try again.';
+      } else if (errorMsg.includes('timeout')) {
+        errorMsg = 'Request timeout. Please try again.';
+      }
+      
+      setError(errorMsg);
+      return { 
+        success: false, 
+        error: errorMsg 
+      };
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const logout = () => {
+    console.log('🚪 Logging out...');
+    clearAuthData();
+  };
+
+  // ========== USER DATA FUNCTIONS ==========
+  const fetchUserData = async () => {
+    if (!user || !apiService.token) return;
+    
+    try {
+      console.log('🔄 Fetching user data...');
+      await Promise.allSettled([
+        fetchAddresses(),
+        fetchCart(),
+        fetchOrders()
+      ]);
+      console.log('✅ User data fetched successfully');
+    } catch (error) {
+      console.error('❌ Error fetching user data:', error);
+    }
+  };
+
+  const fetchAddresses = async () => {
+    if (!apiService.token) return { success: false, error: 'No token' };
+    
+    try {
+      console.log('🔄 Fetching addresses...');
+      const data = await apiService.getAddresses();
+      
+      if (data.success) {
+        const addressesList = data.data?.addresses || data.data || [];
+        setAddresses(addressesList);
+        console.log('✅ Addresses fetched:', addressesList.length);
+        return { success: true, addresses: addressesList };
+      }
+      return { success: false, error: data.error };
+    } catch (error) {
+      console.error('❌ Error fetching addresses:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const fetchCart = async () => {
+    if (!apiService.token) {
+      console.log('🛒 Skipping cart fetch: no token');
+      setCart({ items: [], totalPrice: 0 });
+      return { success: false, error: 'Not authenticated' };
+    }
+    
+    try {
+      console.log('🛒 Fetching cart...');
+      setCartLoading(true);
+      const data = await apiService.getCart();
+      
+      if (data.success || data.cart) {
+        const cartData = data.cart || data;
+        
+        // Ensure cart has proper structure
+        const normalizedCart = {
+          items: Array.isArray(cartData.items) ? cartData.items : [],
+          totalPrice: cartData.totalPrice || 0,
+          updatedAt: cartData.updatedAt || new Date().toISOString()
+        };
+        
+        setCart(normalizedCart);
+        console.log('✅ Cart fetched successfully:', normalizedCart.items.length, 'items');
+        return { success: true, cart: normalizedCart };
+      } else {
+        console.warn('⚠️ Cart fetch returned unexpected format:', data);
+        setCart({ items: [], totalPrice: 0 });
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      console.error('❌ Error fetching cart:', error.message);
+      
+      // Don't clear cart on network errors, only on auth errors
+      if (error.message.includes('Unauthorized') || error.message.includes('401') || error.message.includes('Token')) {
+        setCart({ items: [], totalPrice: 0 });
+      }
+      
+      return { success: false, error: error.message };
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    if (!apiService.token) return { success: false, error: 'No token' };
+    
+    try {
+      console.log('🔄 Fetching orders...');
+      const data = await apiService.getOrders();
+      
+      if (data.success || data.data) {
+        setOrders(data.data || data);
+        console.log('✅ Orders fetched:', (data.data || data).length);
+        return { success: true, orders: data.data || data };
+      }
+      return { success: false, error: data.error };
+    } catch (error) {
+      console.error('❌ Error fetching orders:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // ========== CART FUNCTIONS ==========
+  const addToCart = async (productId, quantity = 1) => {
+    if (!apiService.token) {
+      console.error('❌ Cannot add to cart: not authenticated');
+      return { success: false, message: 'Please login to add items to cart' };
+    }
+    
+    try {
+      console.log('🛒 Adding to cart:', { productId, quantity });
+      const data = await apiService.addToCart({ productId, quantity });
+      
+      if (data.success || data.cart) {
+        const cartData = data.cart || data;
+        
+        // Ensure cart has proper structure
+        const normalizedCart = {
+          items: Array.isArray(cartData.items) ? cartData.items : [],
+          totalPrice: cartData.totalPrice || 0,
+          updatedAt: cartData.updatedAt || new Date().toISOString()
+        };
+        
+        setCart(normalizedCart);
+        console.log('✅ Item added to cart. New cart:', normalizedCart);
+        return { success: true, message: data.message || 'Item added to cart', cart: normalizedCart };
+      }
+      return { success: false, message: data.error || 'Failed to add to cart' };
+    } catch (error) {
+      console.error('❌ Error adding to cart:', error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  const removeFromCart = async (itemId) => {
+    if (!apiService.token) {
+      console.error('❌ Cannot remove from cart: not authenticated');
+      return { success: false, message: 'Please login to modify cart' };
+    }
+    
+    try {
+      console.log('🛒 Removing from cart:', itemId);
+      const data = await apiService.removeCartItem(itemId);
+      
+      if (data.success || data.cart) {
+        const cartData = data.cart || data;
+        
+        // Ensure cart has proper structure
+        const normalizedCart = {
+          items: Array.isArray(cartData.items) ? cartData.items : [],
+          totalPrice: cartData.totalPrice || 0,
+          updatedAt: cartData.updatedAt || new Date().toISOString()
+        };
+        
+        setCart(normalizedCart);
+        console.log('✅ Item removed from cart');
+        return { success: true, message: data.message || 'Item removed from cart', cart: normalizedCart };
+      }
+      return { success: false, message: data.error || 'Failed to remove item' };
+    } catch (error) {
+      console.error('❌ Error removing from cart:', error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  const updateCartItem = async (itemId, quantity) => {
+    if (!apiService.token) {
+      console.error('❌ Cannot update cart: not authenticated');
+      return { success: false, message: 'Please login to modify cart' };
+    }
+    
+    try {
+      console.log('🛒 Updating cart item:', { itemId, quantity });
+      const data = await apiService.updateCartItem(itemId, quantity);
+      
+      if (data.success || data.cart) {
+        const cartData = data.cart || data;
+        
+        // Ensure cart has proper structure
+        const normalizedCart = {
+          items: Array.isArray(cartData.items) ? cartData.items : [],
+          totalPrice: cartData.totalPrice || 0,
+          updatedAt: cartData.updatedAt || new Date().toISOString()
+        };
+        
+        setCart(normalizedCart);
+        console.log('✅ Cart item updated');
+        return { success: true, message: data.message || 'Cart updated', cart: normalizedCart };
+      }
+      return { success: false, message: data.error || 'Failed to update cart' };
+    } catch (error) {
+      console.error('❌ Error updating cart:', error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  // src/context/AuthContext.js - UPDATED clearCart function
+const clearCart = async () => {
+  if (!apiService.token) {
+    console.error('❌ Cannot clear cart: not authenticated');
+    return { success: false, message: 'Please login to modify cart' };
+  }
+  
+  try {
+    console.log('🛒 Clearing cart');
+    const data = await apiService.clearCart();
+    
+    if (data.success) {
+      // CRITICAL FIX: Update cart state immediately and return success
+      setCart({ items: [], totalPrice: 0 });
+      console.log('✅ Cart cleared in context');
+      return { success: true, message: data.message || 'Cart cleared', cart: { items: [], totalPrice: 0 } };
+    }
+    return { success: false, message: data.error || 'Failed to clear cart' };
+  } catch (error) {
+    console.error('❌ Error clearing cart:', error);
+    // Even on error, clear the local cart state
+    setCart({ items: [], totalPrice: 0 });
+    return { success: false, message: error.message };
+  }
+};
+
+  // ========== ADDRESS FUNCTIONS ==========
+  const addAddress = async (addressData) => {
+    if (!apiService.token) {
+      return { success: false, error: 'Please login to add addresses' };
+    }
+    
+    try {
+      console.log('🏠 Adding address:', addressData);
+      const data = await apiService.addAddress(addressData);
+      
+      if (data.success) {
+        await fetchAddresses();
+        return { success: true, message: data.message };
+      }
+      return { success: false, error: data.error };
+    } catch (error) {
+      console.error('❌ Error adding address:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const updateAddress = async (addressId, addressData) => {
+    if (!apiService.token) {
+      return { success: false, error: 'Please login to update addresses' };
+    }
+    
+    try {
+      console.log('🏠 Updating address:', addressId);
+      const data = await apiService.updateAddress(addressId, addressData);
+      
+      if (data.success) {
+        await fetchAddresses();
+        return { success: true, message: data.message };
+      }
+      return { success: false, error: data.error };
+    } catch (error) {
+      console.error('❌ Error updating address:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const deleteAddress = async (addressId) => {
+    if (!apiService.token) {
+      return { success: false, error: 'Please login to delete addresses' };
+    }
+    
+    try {
+      console.log('🏠 Deleting address:', addressId);
+      await apiService.deleteAddress(addressId);
+      await fetchAddresses();
+      return { success: true, message: 'Address deleted successfully' };
+    } catch (error) {
+      console.error('❌ Error deleting address:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const setDefaultAddress = async (addressId) => {
+    if (!apiService.token) {
+      return { success: false, error: 'Please login to set default address' };
+    }
+    
+    try {
+      console.log('🏠 Setting default address:', addressId);
+      const data = await apiService.setDefaultAddress(addressId);
+      
+      if (data.success) {
+        await fetchAddresses();
+        return { success: true, message: data.message };
+      }
+      return { success: false, error: data.error };
+    } catch (error) {
+      console.error('❌ Error setting default address:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // ========== ORDER FUNCTIONS ==========
+  const createOrder = async (orderData) => {
+    if (!apiService.token) {
+      return { success: false, message: 'Please login to create orders' };
+    }
+    
+    try {
+      console.log('📦 Creating order');
+      const data = await apiService.createPaymentOrder(orderData);
+      
+      if (data.success) {
+        await fetchOrders();
+        return { success: true, data: data.data, message: data.message };
+      }
+      return { success: false, message: data.error };
+    } catch (error) {
+      console.error('❌ Error creating order:', error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  // ========== CONTEXT VALUE ==========
+  const value = {
+    // State
+    user,
+    cart,
+    orders,
+    addresses,
+    loading,
+    authLoading,
+    cartLoading,
+    error,
+    initialized,
+    
+    // Auth functions
+    register,
+    login,
+    logout,
+    checkAuthStatus,
+    clearAuthData,
+    
+    // Data fetching
+    fetchUserData,
+    fetchAddresses,
+    fetchCart,
+    fetchOrders,
+    
+    // Cart functions
+    addToCart,
+    removeFromCart,
+    updateCartItem,
+    clearCart,
+    
+    // Address functions
+    addAddress,
+    updateAddress,
+    deleteAddress,
+    setDefaultAddress,
+    
+    // Order functions
+    createOrder,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

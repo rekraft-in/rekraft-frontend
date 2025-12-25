@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/rekraft-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rekraft</title>
+    
+    <!-- PRELOAD CRITICAL IMAGES FOR HOME PAGE BANNER -->
+    <link 
+      rel="preload" 
+      href="/images/homepage.webp" 
+      as="image" 
+      type="image/webp"
+      media="(min-width: 768px)"
+    >
+    <link 
+      rel="preload" 
+      href="/images/homepage-mobile.webp" 
+      as="image" 
+      type="image/webp"
+      media="(max-width: 767px)"
+    >
+    <link 
+      rel="preload" 
+      href="/images/homepage.jpg" 
+      as="image" 
+      type="image/jpeg"
+    >
+    
+    <!-- PRELOAD FONTS (if using custom fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- ADD CSS CRITICAL PATH (if needed) -->
+    <style>
+      /* Critical CSS for above-the-fold content */
+      #root {
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- ADD THIS FOR IMAGE OPTIMIZATION STRATEGY -->
+    <script>
+      // Preload images when page is interactive
+      document.addEventListener('DOMContentLoaded', function() {
+        if ('loading' in HTMLImageElement.prototype) {
+          // Browser supports lazy loading natively
+          const images = document.querySelectorAll('img[loading="lazy"]');
+          images.forEach(img => {
+            img.src = img.dataset.src;
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

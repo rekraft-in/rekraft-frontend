@@ -1,0 +1,34 @@
+Remaining Hardcoded API Calls Report
+Generated: Wed Dec  3 21:52:34 IST 2025
+=====================================
+
+Total calls found:       15
+
+Files with hardcoded calls:
+--------------------------
+src/components/Navbar.jsx
+src/pages/CheckoutPage.jsx
+src/pages/ContactPage.jsx
+src/pages/ForgotPasswordPage.jsx
+src/pages/HomePage.jsx
+src/pages/LaptopDetailPage.jsx
+src/pages/SellPage.jsx
+src/pages/ShopPage.jsx
+
+Detailed list:
+-------------
+src/components/Navbar.jsx:123:      const response = await fetch('http://localhost:3000/api/products');
+src/pages/SellPage.jsx:267:      const response = await fetch('http://localhost:3000/api/sell', {
+src/pages/ContactPage.jsx:99:      const response = await fetch('http://localhost:3000/api/contact/send', {
+src/pages/HomePage.jsx:573:        const response = await fetch('http://localhost:3000/api/products');
+src/pages/ShopPage.jsx:504:        const response = await fetch('http://localhost:3000/api/products');
+src/pages/LaptopDetailPage.jsx:29:        const response = await fetch(`http://localhost:3000/api/products/${id}`);
+src/pages/LaptopDetailPage.jsx:52:        const response = await fetch('http://localhost:3000/api/products');
+src/pages/ForgotPasswordPage.jsx:29:      const response = await fetch('http://localhost:3000/api/auth/forgot-password', {
+src/pages/ForgotPasswordPage.jsx:287:      const response = await fetch('http://localhost:3000/api/auth/verify-reset-otp', {
+src/pages/ForgotPasswordPage.jsx:316:      const response = await fetch('http://localhost:3000/api/auth/forgot-password', {
+src/pages/ForgotPasswordPage.jsx:455:      const response = await fetch('http://localhost:3000/api/auth/reset-password', {
+src/pages/CheckoutPage.jsx:128:      const paymentResponse = await fetch('http://localhost:3000/api/payments/create-order', {
+src/pages/CheckoutPage.jsx:158:          const verifyResponse = await fetch('http://localhost:3000/api/payments/verify-payment', {
+src/pages/CheckoutPage.jsx:208:      const response = await fetch(`http://localhost:3000/api/orders/${orderId}/complete`, {
+src/pages/CheckoutPage.jsx:217:        const orderResponse = await fetch(`http://localhost:3000/api/orders/${orderId}`, {
