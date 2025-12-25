@@ -8,12 +8,13 @@ export default function FAQPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
- const faqCategories = [
+const faqCategories = [
   {
     id: 'product',
     title: "Product & Quality",
     icon: Wrench,
     color: "from-[#8f1eae] to-[#6b1a8a]",
+    shortDesc: "Refurbishment process & standards",
     faqs: [
       {
         question: "What quality checks do your refurbished laptops undergo?",
@@ -42,6 +43,7 @@ export default function FAQPage() {
     title: "Warranty & Support",
     icon: Shield,
     color: "from-[#10B981] to-[#047857]",
+    shortDesc: "Coverage & claim process",
     faqs: [
       {
         question: "What warranty do you offer on refurbished laptops?",
@@ -70,6 +72,7 @@ export default function FAQPage() {
     title: "Shipping & Delivery",
     icon: Truck,
     color: "from-[#3B82F6] to-[#1D4ED8]",
+    shortDesc: "Delivery timelines & tracking",
     faqs: [
       {
         question: "What are your shipping options and delivery timelines?",
@@ -98,6 +101,7 @@ export default function FAQPage() {
     title: "Technical Questions",
     icon: Laptop,
     color: "from-[#8B5CF6] to-[#7C3AED]",
+    shortDesc: "Specs, upgrades & setup",
     faqs: [
       {
         question: "What operating system comes pre-installed?",
