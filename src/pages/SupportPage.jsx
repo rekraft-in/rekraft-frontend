@@ -55,13 +55,11 @@ export default function SupportPage() {
       title: "Troubleshooting & Guides",
       subtitle: "Facing a problem with your laptop?",
       features: [
-        "Heating issues",
-        "Slow performance",
-        "Battery problems",
-        "Charging issues",
+        "Heating & Performance",
+        "Battery & Power",
         "Wi-Fi & connectivity",
-        "Boot or OS errors",
-        "Display or keyboard issues"
+        "System & Boot",
+        "Display & Input"
       ],
       actionText: "View Troubleshooting Guides",
       actionLink: "/guides",
