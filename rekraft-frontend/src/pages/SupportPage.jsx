@@ -36,7 +36,7 @@ export default function SupportPage() {
     {
       id: 'warranty',
       icon: Shield,
-      title: "Warranty & Support",
+      title: "Warranty",
       subtitle: "Need help with a Rekraft-certified device?",
       features: [
         "Warranty claim assistance",
