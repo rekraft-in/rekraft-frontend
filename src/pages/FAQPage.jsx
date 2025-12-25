@@ -19,7 +19,7 @@ const faqCategories = [
       {
         question: "What quality checks do your refurbished laptops undergo?",
         answer: "Every Rekraft laptop undergoes 50+ comprehensive quality checks including hardware diagnostics, battery testing, screen assessment, and performance benchmarking.",
-        
+        tags: ["quality", "testing", "refurbishment"]
       },
       {
         question: "Are the laptops genuinely refurbished or just used?",

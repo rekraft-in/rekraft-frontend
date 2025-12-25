@@ -18,7 +18,7 @@ export default function FAQPage() {
         {
           question: "What quality checks do your refurbished laptops undergo?",
           answer: "Every Rekraft laptop undergoes 50+ comprehensive quality checks including hardware diagnostics, battery health testing (replaced if below 80%), screen quality assessment, keyboard functionality, performance benchmarking, and cosmetic evaluation. We only certify devices that meet 95%+ of original performance standards.",
-          
+          tags: ["quality", "testing", "refurbishment"]
         },
         {
           question: "Are the laptops genuinely refurbished or just used?",
