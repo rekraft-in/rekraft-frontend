@@ -49,13 +49,13 @@ export default function AboutPage() {
     {
       name: "Pranav Thormise",
       role: "General Manager",
-      bio: "Oversees operations, quality control, and efficiency.",
+      bio: "Manages daily operations and quality",
       image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop"
     },
     {
       name: "Atharv Bachhav",
       role: "Technical Head",
-      bio: "Designs digital experiences and marketing visuals.",
+      bio: "Designs digital experiences and marketing visuals",
       image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop"
     },
     {
@@ -164,7 +164,7 @@ export default function AboutPage() {
   </p>
 
   <p className="text-gray-600 leading-relaxed font-lato font-light">
-    Our model creates triple value:
+    Our model creates triple value:<br></br>
     Financial accessibility - Premium tech at 40-70% lower cost
     Performance assurance - Every device Rekraft Certified with warranty
     Planetary responsibility - Each purchase prevents electronics from becoming toxic e-waste
