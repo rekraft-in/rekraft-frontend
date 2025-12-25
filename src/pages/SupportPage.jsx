@@ -90,8 +90,7 @@ export default function SupportPage() {
       title: "Returns & Replacement Support",
       subtitle: "Device issues covered under return policy",
       features: [
-        "7-day return assistance (DOA replacement)",
-        "Exchange request",
+        "24-40 diagnos time",
         "Device not working on arrival",
         "Part mismatch or quality concerns"
       ],
