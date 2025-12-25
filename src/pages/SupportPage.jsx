@@ -85,6 +85,21 @@ export default function SupportPage() {
       badge: "Track"
     },
     {
+      id: 'returns',
+      icon: RefreshCw,
+      title: "Returns & Replacement Support",
+      subtitle: "Device issues covered under return policy",
+      features: [
+        "7-day return assistance (DOA replacement)",
+        "Exchange request",
+        "Device not working on arrival",
+        "Part mismatch or quality concerns"
+      ],
+      actionText: "Request Return/Replacement",
+      actionLink: "/returns",
+      badge: "Replace"
+    },
+    {
       id: 'selling',
       icon: ShoppingBag,
       title: "Support for Selling Your Device",
@@ -165,7 +180,7 @@ export default function SupportPage() {
   const deviceIssues = [
     {
       type: "Laptops",
-      common: ["Battery", "MotherBoard", "Keyboard/touchpad issues", "Speakers"],
+      common: ["Overheating", "Slow performance", "Keyboard/touchpad issues"],
       icon: Wrench
     }
   ];
