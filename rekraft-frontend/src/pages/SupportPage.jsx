@@ -43,7 +43,7 @@ export default function SupportPage() {
         "Repair & replacement updates",
         "Free diagnostics during warranty",
         "Priority service queue",
-        "Pickup & drop support (select locations)"
+        "Pickup & drop (select locations)"
       ],
       actionText: "Start Your Warranty Claim",
       actionLink: "/warranty-claim",
