@@ -39,7 +39,7 @@ export default function SupportPage() {
       title: "Warranty & Support",
       subtitle: "Need help with a Rekraft-certified device?",
       features: [
-        "Warranty claim assistance",
+        
         "Repair & replacement updates",
         "Free diagnostics during warranty",
         "Priority service queue",

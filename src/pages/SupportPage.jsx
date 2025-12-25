@@ -85,7 +85,7 @@ export default function SupportPage() {
     {
       id: 'returns',
       icon: RefreshCw,
-      title: "Returns & Replacement Support",
+      title: "Repair & Replacement Support",
       subtitle: "Device issues covered under return policy",
       features: [
         "24-40 diagnos time",
