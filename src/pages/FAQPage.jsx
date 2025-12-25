@@ -8,122 +8,120 @@ export default function FAQPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
-  const faqCategories = [
-    {
-      id: 'product',
-      title: "Product & Quality",
-      icon: Wrench,
-      color: "from-[#8f1eae] to-[#6b1a8a]",
-      faqs: [
-        {
-          question: "What quality checks do your refurbished laptops undergo?",
-          answer: "Every Rekraft laptop undergoes 50+ comprehensive quality checks including hardware diagnostics, battery health testing (replaced if below 80%), screen quality assessment, keyboard functionality, performance benchmarking, and cosmetic evaluation. We only certify devices that meet 95%+ of original performance standards.",
-          tags: ["quality", "testing", "refurbishment"]
-        },
-        {
-          question: "Are the laptops genuinely refurbished or just used?",
-          answer: "All our laptops are professionally refurbished, not just cleaned used devices. The refurbishment process includes component replacement where needed (batteries, keyboards, storage), thorough cleaning, software reinstallation, and comprehensive testing. Each device receives our Rekraft Certified seal upon passing all quality checks.",
-          tags: ["refurbished", "certified", "process"]
-        },
-        {
-          question: "Do you provide original accessories with the laptops?",
-          answer: "Yes, each laptop comes with genuine charger, appropriate cables, and protective packaging. For Apple devices, we include genuine MagSafe or USB-C chargers. All accessories are tested and verified for functionality before shipment.",
-          tags: ["accessories", "charger", "included"]
-        },
-        {
-          question: "What brands of refurbished laptops do you offer?",
-          answer: "We specialize in premium brands including Apple MacBooks, Dell Latitude/XPS, HP EliteBook/Spectre, Lenovo ThinkPad, and Microsoft Surface. Each brand undergoes brand-specific testing protocols to ensure optimal performance.",
-          tags: ["brands", "apple", "dell", "hp"]
-        }
-      ]
-    },
-    {
-      id: 'warranty',
-      title: "Warranty & Support",
-      icon: Shield,
-      color: "from-[#10B981] to-[#047857]",
-      faqs: [
-        {
-          question: "What warranty do you offer on refurbished laptops?",
-          answer: "All Rekraft refurbished laptops come with a comprehensive 1-year warranty covering parts and labor. This includes free repairs, component replacements, technical support, and free shipping for warranty claims. Extended warranty options (2-3 years) are available at purchase.",
-          tags: ["warranty", "coverage", "support"]
-        },
-        {
-          question: "How do I claim warranty service?",
-          answer: "Contact our support team via phone (+91-9876543210), email (support@rekraft.in), or live chat. Provide your order ID and describe the issue. We offer doorstep pickup for warranty claims across India with 5-7 day turnaround for most repairs.",
-          tags: ["claim", "repair", "support"]
-        },
-        {
-          question: "Does warranty cover accidental damage?",
-          answer: "Standard warranty covers manufacturing defects and component failures. For accidental damage protection, we offer optional Rekraft Care plans that cover screen damage, liquid spills, and accidental drops. These can be purchased within 30 days of device delivery.",
-          tags: ["accidental", "damage", "protection"]
-        },
-        {
-          question: "What technical support is included?",
-          answer: "We provide comprehensive technical support including phone support (9AM-9PM daily), email support (24/7 response within 4 hours), live chat, remote assistance, and setup guidance. Support covers software issues, hardware troubleshooting, and optimization advice.",
-          tags: ["technical", "support", "help"]
-        }
-      ]
-    },
-    {
-      id: 'shipping',
-      title: "Shipping & Delivery",
-      icon: Truck,
-      color: "from-[#3B82F6] to-[#1D4ED8]",
-      faqs: [
-        {
-          question: "What are your shipping options and delivery timelines?",
-          answer: "We offer free standard shipping (3-5 business days) across India. Express shipping (1-2 business days) is available for ₹299. All orders are processed within 24 hours with real-time tracking via SMS and email.",
-          tags: ["shipping", "delivery", "timeline"]
-        },
-        {
-          question: "Do you offer installation and setup assistance?",
-          answer: "Yes, we provide free remote setup assistance for all customers. Our technicians can help with initial setup, data transfer from old devices, software installation, and optimization. This service is available within 7 days of delivery.",
-          tags: ["setup", "installation", "assistance"]
-        },
-        {
-          question: "Can I track my order in real-time?",
-          answer: "Absolutely. Once your order ships, you'll receive tracking information via SMS and email. You can track your package in real-time through our website or the courier partner's app with live location updates.",
-          tags: ["tracking", "order", "updates"]
-        },
-        {
-          question: "What is your delivery coverage area?",
-          answer: "We deliver to 25,000+ pin codes across India including tier 2/3 cities. For remote locations, delivery may take 1-2 additional days. Contact us for specific location queries before ordering.",
-          tags: ["delivery", "coverage", "india"]
-        }
-      ]
-    },
-    
-
-    {
-      id: 'technical',
-      title: "Technical Questions",
-      icon: Laptop,
-      color: "from-[#8B5CF6] to-[#7C3AED]",
-      faqs: [
-        {
-          question: "What operating system comes pre-installed?",
-          answer: "All Windows laptops come with genuine Windows 10/11 Pro with license activated. Apple MacBooks come with the latest compatible macOS. We can also install Linux distributions upon request at no additional charge.",
-          tags: ["os", "windows", "macos", "linux"]
-        },
-        {
-          question: "Can the RAM or storage be upgraded?",
-          answer: "Most Rekraft laptops are upgradeable. We offer upgrade services at purchase - you can customize RAM and SSD storage. Post-purchase upgrades can be done through our service centers or authorized partners.",
-          tags: ["upgrade", "ram", "storage", "ssd"]
-        },
-        {
-          question: "What about battery life and health?",
-          answer: "All batteries are tested and replaced if below 80% health. Typical battery life is 6-10 hours depending on model and usage. We provide battery health certification with each device showing cycle count and maximum capacity.",
-          tags: ["battery", "health", "life"]
-        },
-        {
-          question: "Do you provide data wiping certification?",
-          answer: "Yes, all devices undergo secure data erasure using DoD 5220.22-M standards. We provide data wiping certification with each device ensuring complete removal of previous user data for your privacy and security.",
-          tags: ["data", "security", "privacy", "wiping"]
-        }
-      ]
-    }
-  ];
+ const faqCategories = [
+  {
+    id: 'product',
+    title: "Product & Quality",
+    icon: Wrench,
+    color: "from-[#8f1eae] to-[#6b1a8a]",
+    faqs: [
+      {
+        question: "What quality checks do your refurbished laptops undergo?",
+        answer: "Every Rekraft laptop undergoes 50+ comprehensive quality checks including hardware diagnostics, battery testing, screen assessment, and performance benchmarking.",
+        tags: ["quality", "testing", "refurbishment"]
+      },
+      {
+        question: "Are the laptops genuinely refurbished or just used?",
+        answer: "All laptops are professionally refurbished with component replacement, thorough cleaning, software reinstallation, and comprehensive testing.",
+        tags: ["refurbished", "certified", "process"]
+      },
+      {
+        question: "Do you provide original accessories with the laptops?",
+        answer: "Yes, each laptop comes with genuine charger, cables, and protective packaging - all tested for functionality.",
+        tags: ["accessories", "charger", "included"]
+      },
+      {
+        question: "What brands of refurbished laptops do you offer?",
+        answer: "We specialize in Apple MacBooks, Dell, HP, Lenovo, and Microsoft Surface with brand-specific testing protocols.",
+        tags: ["brands", "apple", "dell", "hp"]
+      }
+    ]
+  },
+  {
+    id: 'warranty',
+    title: "Warranty & Support",
+    icon: Shield,
+    color: "from-[#10B981] to-[#047857]",
+    faqs: [
+      {
+        question: "What warranty do you offer on refurbished laptops?",
+        answer: "Comprehensive 1-year warranty covering parts and labor with free repairs and technical support included.",
+        tags: ["warranty", "coverage", "support"]
+      },
+      {
+        question: "How do I claim warranty service?",
+        answer: "Contact support via phone, email, or live chat for doorstep pickup with 5-7 day repair turnaround.",
+        tags: ["claim", "repair", "support"]
+      },
+      {
+        question: "Does warranty cover accidental damage?",
+        answer: "Standard warranty covers manufacturing defects; accidental damage protection available as optional Rekraft Care plans.",
+        tags: ["accidental", "damage", "protection"]
+      },
+      {
+        question: "What technical support is included?",
+        answer: "Phone, email, and live chat support with remote assistance and setup guidance available.",
+        tags: ["technical", "support", "help"]
+      }
+    ]
+  },
+  {
+    id: 'shipping',
+    title: "Shipping & Delivery",
+    icon: Truck,
+    color: "from-[#3B82F6] to-[#1D4ED8]",
+    faqs: [
+      {
+        question: "What are your shipping options and delivery timelines?",
+        answer: "Free standard shipping (3-5 days) with express options available; real-time tracking provided.",
+        tags: ["shipping", "delivery", "timeline"]
+      },
+      {
+        question: "Do you offer installation and setup assistance?",
+        answer: "Free remote setup assistance available for initial setup, data transfer, and software installation.",
+        tags: ["setup", "installation", "assistance"]
+      },
+      {
+        question: "Can I track my order in real-time?",
+        answer: "Yes, real-time tracking via SMS and email once your order ships.",
+        tags: ["tracking", "order", "updates"]
+      },
+      {
+        question: "What is your delivery coverage area?",
+        answer: "Delivery to 25,000+ pin codes across India including tier 2/3 cities.",
+        tags: ["delivery", "coverage", "india"]
+      }
+    ]
+  },
+  {
+    id: 'technical',
+    title: "Technical Questions",
+    icon: Laptop,
+    color: "from-[#8B5CF6] to-[#7C3AED]",
+    faqs: [
+      {
+        question: "What operating system comes pre-installed?",
+        answer: "Windows laptops come with genuine Windows Pro; MacBooks with compatible macOS; Linux available on request.",
+        tags: ["os", "windows", "macos", "linux"]
+      },
+      {
+        question: "Can the RAM or storage be upgraded?",
+        answer: "Most laptops are upgradeable with customization options at purchase and post-purchase service.",
+        tags: ["upgrade", "ram", "storage", "ssd"]
+      },
+      {
+        question: "What about battery life and health?",
+        answer: "Batteries tested and replaced if below 80% health with certification showing cycle count and capacity.",
+        tags: ["battery", "health", "life"]
+      },
+      {
+        question: "Do you provide data wiping certification?",
+        answer: "Yes, secure data erasure certification provided ensuring complete removal of previous user data.",
+        tags: ["data", "security", "privacy", "wiping"]
+      }
+    ]
+  }
+];
 
   const allFaqs = faqCategories.flatMap(category => 
     category.faqs.map(faq => ({ ...faq, category: category.id }))
