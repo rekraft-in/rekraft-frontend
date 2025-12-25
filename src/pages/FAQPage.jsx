@@ -19,7 +19,7 @@ const faqCategories = [
       {
         question: "What quality checks do your refurbished laptops undergo?",
         answer: "Every Rekraft laptop undergoes 50+ comprehensive quality checks including hardware diagnostics, battery testing, screen assessment, and performance benchmarking.",
-        tags: ["quality", "testing", "refurbishment"]
+        
       },
       {
         question: "Are the laptops genuinely refurbished or just used?",
@@ -33,7 +33,7 @@ const faqCategories = [
       },
       {
         question: "What brands of refurbished laptops do you offer?",
-        answer: "We specialize in Apple MacBooks, Dell, HP, Lenovo, and Microsoft Surface with brand-specific testing protocols.",
+        answer: "We offer professionally refurbished laptops from leading brands including Apple MacBooks, Dell, HP, Lenovo, Microsoft Surface, ASUS, Samsung and Acer, each certified through our rigorous quality process.",
         tags: ["brands", "apple", "dell", "hp"]
       }
     ]
@@ -179,7 +179,7 @@ const faqCategories = [
   ];
 
   const quickStats = [
-    { label: "Avg. Response Time", value: "4 Hours", icon: Clock },
+    { label: "Avg. Response Time", value: "24 Hours", icon: Clock },
     { label: "Customer Satisfaction", value: "95%", icon: CheckCircle },
     { label: "Warranty Claims Resolved", value: "24-48 Hours", icon: Shield },
     { label: "Free Shipping", value: "Pan India", icon: Truck }
