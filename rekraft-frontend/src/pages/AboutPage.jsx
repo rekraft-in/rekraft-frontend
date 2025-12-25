@@ -94,7 +94,7 @@ export default function AboutPage() {
     {
       step: "05",
       title: "Certification",
-      description: "Quality certification and 1-year warranty",
+      description: "Quality certification and 2-year warranty",
       details: "Each device receives our Rekraft Certified seal"
     },
     {
@@ -299,7 +299,7 @@ export default function AboutPage() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl font-light text-gray-900 mb-6 tracking-tight font-montserrat">
-              Rekraft Journey
+              Our Path to Excellence
             </h2>
             <p className="text-gray-600 text-lg max-w-3xl mx-auto font-lato font-light">
               Our commitment to quality and sustainability
