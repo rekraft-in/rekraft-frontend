@@ -333,7 +333,7 @@ const StatsSection = () => {
   );
 };
 
-// Trust Badges Component
+// Trust Badges Component - UPDATED with 5 badges
 const TrustSection = () => (
   <section className="py-16 bg-white border-y border-gray-300">
     <div className="max-w-6xl mx-auto px-6">
@@ -347,12 +347,13 @@ const TrustSection = () => (
         <p className="text-gray-600 max-w-2xl mx-auto text-sm font-light font-roboto">Every device undergoes 50+ point quality testing and comes with comprehensive 2 year warranty</p>
       </motion.div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 items-center justify-items-center">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 items-center justify-items-center">
         {[
           { icon: Shield, text: "Secure Purchase" },
           { icon: Star, text: "4.8/5 Rating" },
           { icon: Truck, text: "Free Shipping" },
-          { icon: Award, text: "2Y Warranty" }
+          { icon: Award, text: "2Y Warranty" },
+          { icon: RotateCcw, text: "Easy Replacement" } // Added new badge
         ].map((item, index) => (
           <motion.div
             key={index}
