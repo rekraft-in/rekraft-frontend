@@ -350,6 +350,7 @@ const TrustSection = () => (
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 items-center justify-items-center">
         {[
           { icon: Shield, text: "Secure Purchase" },
+          { icon: RefreshCcw, text: "Easy Replacement" },
           { icon: Star, text: "4.8/5 Rating" },
           { icon: Truck, text: "Free Shipping" },
           { icon: Award, text: "2Y Warranty" }
