@@ -373,6 +373,9 @@ export default function WarrantyPage() {
         {/* =========================
             SUPPORT SECTION
             ========================= */}
+{/* =========================
+    SUPPORT SECTION
+    ========================= */}
 <section className="py-20 bg-[#F5F2FA] border-y border-gray-200">
   <div className="max-w-6xl mx-auto px-6">
 
@@ -392,7 +395,7 @@ export default function WarrantyPage() {
       </p>
     </motion.div>
 
-    {/* Cards */}
+    {/* Cards - Updated with rounded-lg to match other boxes */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {[
         {
@@ -424,7 +427,7 @@ export default function WarrantyPage() {
             transition={{ duration: 0.5, delay: index * 0.1 }}
             whileHover={{ y: -6 }}
             viewport={{ once: true }}
-            className="bg-white border border-gray-200 rounded-xl p-8 text-center group transition-all duration-300 hover:border-[#8f1eae]"
+            className="bg-white border border-gray-300 rounded-lg p-8 text-center group transition-all duration-300 hover:border-[#8f1eae]"
           >
             {/* Icon */}
             <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-[#F5F2FA] flex items-center justify-center 
@@ -452,7 +455,6 @@ export default function WarrantyPage() {
     </div>
   </div>
 </section>
-
 
         {/* =========================
             WARRANTY VALIDITY RULES
