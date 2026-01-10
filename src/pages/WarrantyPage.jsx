@@ -373,69 +373,86 @@ export default function WarrantyPage() {
         {/* =========================
             SUPPORT SECTION
             ========================= */}
-        <section className="py-16 bg-[#F5F2FA] border-y border-gray-300 mb-16">
-          <div className="max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-12"
-            >
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4 uppercase font-poppins">
-                Get Support
-              </h2>
-              <p className="text-gray-600 max-w-2xl mx-auto text-sm font-light font-roboto">
-                Contact our support team for warranty or replacement assistance
-              </p>
-            </motion.div>
+<section className="py-20 bg-[#F5F2FA] border-y border-gray-200">
+  <div className="max-w-6xl mx-auto px-6">
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {[
-                {
-                  icon: Phone,
-                  title: "WhatsApp Support",
-                  contact: "+91-9373712701",
-                  detail: "Warranty & replacement queries"
-                },
-                {
-                  icon: Mail,
-                  title: "Email Support",
-                  contact: "contactrekraft@gmail.com",
-                  detail: "Response within 24–48 hours"
-                },
-                {
-                  icon: MapPin,
-                  title: "Service Coverage",
-                  contact: "Pan-India",
-                  detail: "Pickup & return available"
-                }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="text-center bg-white p-6 border border-gray-300 rounded-lg"
-                  >
-                    <div className="w-16 h-16 bg-[#8f1eae] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 font-poppins">
-                      {item.title}
-                    </h3>
-                    <p className="text-[#8f1eae] font-medium font-roboto">
-                      {item.contact}
-                    </p>
-                    <p className="text-gray-500 text-sm font-light font-roboto">
-                      {item.detail}
-                    </p>
-                  </motion.div>
-                );
-              })}
+    {/* Heading */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      viewport={{ once: true }}
+      className="text-center mb-16"
+    >
+      <h2 className="text-2xl font-semibold text-gray-900 uppercase tracking-wide font-poppins">
+        Get Support
+      </h2>
+      <p className="text-gray-600 text-sm mt-3 max-w-xl mx-auto font-light font-roboto">
+        Reach our team for warranty verification, replacements, or service queries
+      </p>
+    </motion.div>
+
+    {/* Cards */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {[
+        {
+          icon: Phone,
+          title: "WhatsApp Support",
+          contact: "+91 93737 12701",
+          detail: "Warranty & replacement queries",
+        },
+        {
+          icon: Mail,
+          title: "Email Support",
+          contact: "contactrekraft@gmail.com",
+          detail: "Response within 24–48 hours",
+        },
+        {
+          icon: MapPin,
+          title: "Service Coverage",
+          contact: "Pan-India",
+          detail: "Pickup available with inspection charges",
+        },
+      ].map((item, index) => {
+        const Icon = item.icon;
+
+        return (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            whileHover={{ y: -6 }}
+            viewport={{ once: true }}
+            className="bg-white border border-gray-200 rounded-xl p-8 text-center group transition-all duration-300 hover:border-[#8f1eae]"
+          >
+            {/* Icon */}
+            <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-[#F5F2FA] flex items-center justify-center 
+                            group-hover:bg-[#8f1eae] transition-all duration-300">
+              <Icon className="w-6 h-6 text-[#8f1eae] group-hover:text-white transition-colors duration-300" />
             </div>
-          </div>
-        </section>
+
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-gray-900 mb-1 font-poppins">
+              {item.title}
+            </h3>
+
+            {/* Contact */}
+            <p className="text-[#8f1eae] font-medium text-sm mb-2 font-roboto">
+              {item.contact}
+            </p>
+
+            {/* Detail */}
+            <p className="text-gray-500 text-sm font-light font-roboto">
+              {item.detail}
+            </p>
+          </motion.div>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
 
         {/* =========================
             WARRANTY VALIDITY RULES
